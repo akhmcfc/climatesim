@@ -214,6 +214,40 @@ function calcDelta(){
   return{drain,regen,net:regen-drain};
 }
 
+function getSDGActions(country, choice){
+  const base=country.sdgActions||[];
+  if(choice==='expand'){
+    return {
+      label:'RECOMMENDED PATHWAY — FOSSIL EXPANSION CHOSEN',
+      labelColor:'#993C1D',
+      borderColor:'#4A1B0C',
+      actions:[
+        {label:'Immediate damage limitation', text:`Fossil expansion this round deepens ${country.name}'s SDG gap. Publish a credible phase-down timeline to preserve diplomatic standing and avoid NDC violation penalties.`},
+        {label:'Medium term course correction', text:`Redirect a share of fossil revenues into a sovereign transition fund. Without structural diversification, ${country.name} faces a fiscal cliff when peak demand arrives.`},
+        {label:'Structural accountability', text:`The SDG targets currently failing cannot be met on this trajectory. A formal NDC revision with independent verification is the minimum required step before the next COP cycle.`}
+      ]
+    };
+  }
+  if(choice==='conserve'){
+    return {
+      label:'RECOMMENDED PATHWAY — CONSERVATION CHOSEN',
+      labelColor:'#BA7517',
+      borderColor:'#633806',
+      actions:[
+        {label:'Immediate next step', text:`Conservation reduces emissions but builds no replacement capacity. Pair this round's conservation with a renewable procurement commitment to avoid continued fossil infrastructure dependency.`},
+        {label:'Medium term escalation', text:`Conservation alone cannot close the SDG 7 and SDG 13 gaps for ${country.name}. The next round should move toward investment — especially if major emitters continue expanding.`},
+        {label:'Structural position', text:`${country.name}'s conservation signals good faith but generates no compounding returns. Investment next round builds infrastructure that reduces costs and increases budget regeneration over remaining rounds.`}
+      ]
+    };
+  }
+  return {
+    label:'RECOMMENDED PATHWAY — INVESTMENT CHOSEN',
+    labelColor:'#1D9E75',
+    borderColor:'#0F6E56',
+    actions: base
+  };
+}
+
 function getSuggestedPolicy(country,currentChoice,allChoices,budget,temperature,infraScore,round){
   const expanders=COUNTRIES.filter(c=>allChoices[c.id]==='expand'&&c.id!==country.id);
   const investors=COUNTRIES.filter(c=>allChoices[c.id]==='invest'&&c.id!==country.id);
@@ -439,8 +473,9 @@ function render(){
         h+=`<div class="sdg-card"><div class="sdg-top"><div class="sdg-name">${c.flag} ${c.name}</div><div class="sdg-status ${c.sdgStatus}">${c.sdgStatusLabel}</div></div>
           <div style="font-size:9px;margin-bottom:8px;color:#5F5E5A">Chose: <span style="font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;background:${ch==='expand'?'#4A1B0C':ch==='invest'?'#0C447C':'#085041'};color:${ch==='expand'?'#F0997B':ch==='invest'?'#85B7EB':'#5DCAA5'}">${ch==='conserve'?'Conservation':ch==='invest'?'Renew. Investment':'Fossil Expansion'}</span></div>`;
         c.sdgGaps.forEach(g=>{h+=`<div class="sdg-goal"><div class="sdg-goal-tag">${g.goal}</div><div class="sdg-goal-text">${g.text}</div></div>`;});
-        h+=`<div class="sdg-action"><div class="sdg-action-tag">RECOMMENDED PATHWAY</div>`;
-        c.sdgActions.forEach(a=>{h+=`<div class="sdg-goal-text" style="margin-bottom:4px"><span style="color:#639922;font-weight:600">${a.label}:</span> ${a.text}</div>`;});
+        const sdgA=getSDGActions(c,ch);
+        h+=`<div class="sdg-action" style="border-color:${sdgA.borderColor}"><div class="sdg-action-tag" style="color:${sdgA.labelColor}">${sdgA.label}</div>`;
+        sdgA.actions.forEach(a=>{h+=`<div class="sdg-goal-text" style="margin-bottom:4px"><span style="color:#639922;font-weight:600">${a.label}:</span> ${a.text}</div>`;});
         h+=`</div></div>`;
       });
       h+=`</div>`;
