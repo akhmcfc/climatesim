@@ -613,6 +613,41 @@ function restart(){
 }
 function getVerdict(s){return s>=5?{l:'Cooperative Actor',c:'g'}:s>=0?{l:'Neutral Actor',c:'m'}:{l:'Defecting Actor',c:'b'}}
 
+function getSDGActions(country, choice){
+  const sdg=SDG[country.id];
+  if(choice==='expand'){
+    return {
+      label:'RECOMMENDED PATHWAY — FOSSIL EXPANSION CHOSEN',
+      labelColor:'#993C1D',
+      borderColor:'#4A1B0C',
+      actions: sdg.expandActions || [
+        {label:'Immediate damage limitation', text:`Fossil expansion this round deepens ${country.name}'s SDG gap. Publish a credible coal/oil phase-down timeline to preserve diplomatic standing at COP.`},
+        {label:'Medium term course correction', text:`Redirect a portion of fossil revenues into a sovereign transition fund. Without structural diversification, ${country.name} faces a fiscal cliff when demand peaks.`},
+        {label:'Structural accountability', text:`The SDG targets ${country.name} is failing cannot be met on the current trajectory. A formal NDC revision with independent verification is the minimum required step.`}
+      ]
+    };
+  }
+  if(choice==='conserve'){
+    return {
+      label:'RECOMMENDED PATHWAY — CONSERVATION CHOSEN',
+      labelColor:'#BA7517',
+      borderColor:'#633806',
+      actions: sdg.conserveActions || [
+        {label:'Immediate next step', text:`Conservation reduces emissions but builds no replacement capacity. ${country.name} should pair this with a renewable procurement target to avoid dependency on continued fossil infrastructure.`},
+        {label:'Medium term escalation', text:`Conservation alone cannot close the SDG 7 and SDG 13 gaps. The next round should move toward investment — particularly if other major emitters continue expanding.`},
+        {label:'Structural position', text:`${country.name}'s conservation signals good faith at COP but generates no leverage. Transitioning to investment creates compounding returns and strengthens the case for climate finance access.`}
+      ]
+    };
+  }
+  // invest
+  return {
+    label:'RECOMMENDED PATHWAY — INVESTMENT CHOSEN',
+    labelColor:'#1D9E75',
+    borderColor:'#0F6E56',
+    actions: sdg.investActions || sdg.actions
+  };
+}
+
 function getSuggestedPolicy(country, currentChoice, allChoices, budget, temperature, infraScore, round) {
   const expanders = COUNTRIES.filter(c => allChoices[c.id] === 'expand' && c.id !== country.id);
   const investors = COUNTRIES.filter(c => allChoices[c.id] === 'invest' && c.id !== country.id);
@@ -811,8 +846,8 @@ function render(){
         sdg.gaps.forEach(g=>{
           h+=`<div class="sdg-goal"><div class="sdg-goal-tag">${g.goal}</div><div class="sdg-goal-text">${g.text}</div></div>`;
         });
-        h+=`<div class="sdg-action"><div class="sdg-action-tag">RECOMMENDED PATHWAY</div>`;
-        sdg.actions.forEach(a=>{
+        h+=`<div class="sdg-action" style="border-color:${getSDGActions(c,ch).borderColor}"><div class="sdg-action-tag" style="color:${getSDGActions(c,ch).labelColor}">${getSDGActions(c,ch).label}</div>`;
+        getSDGActions(c,ch).actions.forEach(a=>{
           h+=`<div class="sdg-goal-text" style="margin-bottom:4px"><span style="color:#639922;font-weight:600">${a.label}:</span> ${a.text}</div>`;
         });
         h+=`</div></div>`;
