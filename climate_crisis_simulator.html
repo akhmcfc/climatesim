@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClimateSim — AI Climate Negotiation Platform</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060b18;color:#ddd9d0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;font-size:13px;line-height:1.5}
+.topbar{background:#080e1e;border-bottom:1px solid #1a2640;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.logo{font-size:17px;font-weight:700;color:#7F77DD}.logo span{color:#5DCAA5}
+.tagline{font-size:11px;color:#444441;margin-top:2px}
+.top-right{display:flex;align-items:center;gap:8px}
+.rpill{font-size:11px;background:#0d1220;border:0.5px solid #2a3050;border-radius:20px;padding:4px 12px;color:#888780}
+.btn-refresh{padding:6px 14px;background:#0d1220;border:0.5px solid #534AB7;border-radius:6px;font-size:11px;color:#7F77DD;cursor:pointer;transition:all 0.15s;font-weight:500}
+.btn-refresh:hover{background:#26215C;color:#AFA9EC}
+
+.mbar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#1a2035}
+.met{background:#070c1a;padding:11px 16px}
+.met-l{font-size:10px;color:#5F5E5A;margin-bottom:4px;font-weight:500}
+.met-v{font-size:20px;font-weight:600}
+.met-v.ok{color:#1D9E75}.met-v.warn{color:#BA7517}.met-v.crit{color:#E24B4A}.met-v.temp{color:#EF9F27}.met-v.nt{color:#888780}
+.met-s{font-size:10px;color:#444441;margin-top:2px}
+
+.bwrap{padding:10px 24px;background:#070c1a;border-bottom:0.5px solid #1a2035}
+.btop{display:flex;justify-content:space-between;font-size:11px;color:#5F5E5A;margin-bottom:5px}
+.trk{height:5px;background:#0a0f1a;border-radius:3px;overflow:hidden}
+.fill{height:100%;transition:width 0.8s ease}
+.fill.ok{background:#1D9E75}.fill.warn{background:#BA7517}.fill.crit{background:#E24B4A}
+.preview-note{font-size:10px;color:#1D9E75;margin-top:4px}
+.source-bar{padding:4px 24px;background:#070c1a;border-bottom:0.5px solid #1a2035;font-size:9px;color:#333330;text-align:right}
+
+.pbanner{margin:10px 24px;background:#0d0d1e;border:0.5px solid #3C3489;border-radius:6px;padding:8px 14px;font-size:11px;color:#7F77DD;text-align:center}
+
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 24px 12px}
+.cp{background:#080e1e;border:0.5px solid #1a2640;border-radius:8px;padding:14px}
+.cp.pc{border-color:#0F6E56;background:#060f0b}
+.cp.pi{border-color:#185FA5;background:#060b14}
+.cp.pe{border-color:#712B13;background:#0e0806}
+
+.cph{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid #1a2035}
+.cpf{font-size:18px}.cpn{font-size:13px;font-weight:600}.cpt{font-size:10px;color:#5F5E5A;margin-top:1px}
+
+.sl{font-size:9px;color:#444441;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;margin:8px 0 4px}
+.dr{display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid #0d1220;font-size:11px}
+.dr:last-of-type{border:none}
+.dk{color:#5F5E5A}.dv{font-weight:600}
+.dv.hi{color:#993C1D}.dv.md{color:#BA7517}.dv.lo{color:#1D9E75}.dv.nt{color:#888780}
+
+.cbadge{display:flex;align-items:center;gap:5px;background:#0d1220;border:0.5px solid #2a3050;border-radius:4px;padding:4px 7px;margin:5px 0}
+.cbadge-t{font-size:10px;font-weight:600;color:#AFA9EC}.cbadge-s{font-size:9px;color:#444441;margin-left:auto}
+
+.pbars{margin:4px 0}
+.pbr{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.pbl{font-size:9px;color:#5F5E5A;width:75px;flex-shrink:0}
+.pbtrk{flex:1;height:4px;background:#0a0f1a;border-radius:2px;overflow:hidden}
+.pbfil{height:100%;border-radius:2px}
+.pbv{font-size:9px;color:#888780;min-width:55px;text-align:right}
+
+.embar{display:flex;height:5px;border-radius:2px;overflow:hidden;gap:1px;margin:5px 0 3px}
+.eml{display:flex;gap:5px;flex-wrap:wrap}
+.emi{display:flex;align-items:center;gap:2px;font-size:9px;color:#5F5E5A}
+.emd{width:5px;height:5px;border-radius:1px}
+
+.pledge{font-size:10px;color:#7F77DD;background:#0a0a1a;border-radius:3px;padding:4px 6px;margin:6px 0;line-height:1.4}
+
+.pbtns{display:grid;gap:4px;margin-top:8px}
+.pbtn{padding:6px 8px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;border:0.5px solid transparent;text-align:left;transition:all 0.15s}
+.pbtn:disabled{opacity:0.25;cursor:not-allowed}
+.pbtn .hint{font-size:8px;opacity:0.7;margin-top:1px}
+.pbtn-c{background:#060f0b;border-color:#085041;color:#5DCAA5}
+.pbtn-c:hover:not(:disabled){background:#0a1a10;border-color:#1D9E75}
+.pbtn-c.sel{background:#0F6E56;border-color:#1D9E75;color:#E1F5EE}
+.pbtn-i{background:#06090f;border-color:#0C447C;color:#85B7EB}
+.pbtn-i:hover:not(:disabled){background:#0a1020;border-color:#378ADD}
+.pbtn-i.sel{background:#185FA5;border-color:#378ADD;color:#E6F1FB}
+.pbtn-e{background:#0e0806;border-color:#4A1B0C;color:#F0997B}
+.pbtn-e:hover:not(:disabled){background:#180c06;border-color:#712B13}
+.pbtn-e.sel{background:#712B13;border-color:#993C1D;color:#FAECE7}
+
+.abar{padding:0 24px 12px}
+.btn-run{width:100%;padding:12px;background:#26215C;color:#AFA9EC;border:0.5px solid #534AB7;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.btn-run:hover:not(:disabled){background:#3C3489;color:#CECBF6}
+.btn-run:disabled{opacity:0.3;cursor:not-allowed}
+
+.term-pick{margin:0 24px 12px;background:#0d0d1e;border:0.5px solid #3C3489;border-radius:10px;padding:20px 24px}
+.tp-title{font-size:14px;color:#AFA9EC;font-weight:500;margin-bottom:4px;text-align:center}
+.tp-sub{font-size:11px;color:#444441;text-align:center;margin-bottom:16px}
+.tp-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tp-btn{padding:14px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;text-align:center}
+.tp-btn .tp-hint{font-size:10px;opacity:0.75;margin-top:3px;font-weight:400}
+.tp-btn.st{background:#26215C;color:#AFA9EC;border:0.5px solid #534AB7}
+.tp-btn.st:hover{background:#3C3489}
+.tp-btn.lt{background:#085041;color:#9FE1CB;border:0.5px solid #1D9E75}
+.tp-btn.lt:hover{background:#0F6E56}
+
+.chosen-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 24px 12px}
+.cs-card{background:#080e1e;border:0.5px solid #1a2640;border-radius:6px;padding:10px;text-align:center}
+.cs-flag{font-size:16px;margin-bottom:4px}.cs-name{font-size:10px;color:#888780;margin-bottom:5px}
+.cs-choice{font-size:10px;font-weight:600;padding:3px 8px;border-radius:12px;display:inline-block}
+.cs-choice.pe{background:#4A1B0C;color:#F0997B}
+.cs-choice.pi{background:#0C447C;color:#85B7EB}
+.cs-choice.pc{background:#085041;color:#5DCAA5}
+
+.term-toggle{display:flex;gap:8px;padding:0 24px 10px;align-items:center}
+.tt-lbl{font-size:11px;color:#5F5E5A;margin-right:4px}
+.tt-btn{padding:6px 16px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
+.tt-btn.st-on{background:#534AB7;color:#CECBF6}
+.tt-btn.lt-on{background:#0F6E56;color:#E1F5EE}
+.tt-btn.off{background:#0d1220;color:#5F5E5A;border:0.5px solid #1a2035}
+.tt-btn.sg-on{background:#633806;color:#FAC775}
+.sdg-panel{margin:0 24px 12px;background:#0d0a06;border:0.5px solid #633806;border-radius:8px;padding:12px 16px}
+.sdg-panel-lbl{font-size:9px;font-weight:700;letter-spacing:0.08em;color:#BA7517;margin-bottom:8px}
+.sdg-global-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid #1a1206;font-size:11px}
+.sdg-global-row:last-of-type{border:none}
+.sdg-gk{color:#5F5E5A;min-width:120px}
+.sdg-gv{font-weight:500;color:#EF9F27;text-align:right}
+.sdg-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 24px 12px}
+.sdg-card{background:#0d0a06;border:0.5px solid #633806;border-radius:8px;padding:14px}
+.sdg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sdg-name{font-size:12px;color:#888780;font-weight:500}
+.sdg-status{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600}
+.sdg-status.on-track{background:#085041;color:#5DCAA5}
+.sdg-status.at-risk{background:#633806;color:#FAC775}
+.sdg-status.off-track{background:#4A1B0C;color:#F0997B}
+.sdg-goal{background:#0a0806;border-radius:4px;padding:6px 8px;margin-bottom:5px}
+.sdg-goal-tag{font-size:8px;color:#BA7517;font-weight:700;letter-spacing:0.06em;margin-bottom:3px}
+.sdg-goal-text{font-size:10px;color:#888780;line-height:1.5}
+.sdg-action{background:#0d1206;border:0.5px solid #3B6D11;border-radius:4px;padding:6px 8px;margin-top:6px}
+.sdg-action-tag{font-size:8px;color:#639922;font-weight:700;letter-spacing:0.06em;margin-bottom:3px}
+.sdg-action-text{font-size:10px;color:#5F5E5A;line-height:1.5}
+.suggested-policy{background:#060f0b;border:0.5px solid #0F6E56;border-radius:5px;padding:8px 10px;margin-top:8px}
+.sp-label{font-size:9px;font-weight:700;letter-spacing:0.08em;color:#1D9E75;margin-bottom:5px}
+.sp-action{font-size:10px;font-weight:600;color:#5DCAA5;margin-bottom:3px}
+.sp-reason{font-size:10px;color:#5F5E5A;line-height:1.5}
+
+.global-panel{margin:0 24px 12px;border-radius:8px;padding:12px 16px}
+.global-panel.st{background:#0d0d1e;border:0.5px solid #534AB7}
+.global-panel.lt{background:#060f0b;border:0.5px solid #0F6E56}
+.gp-lbl{font-size:9px;font-weight:700;letter-spacing:0.08em;margin-bottom:8px}
+.gp-lbl.st{color:#7F77DD}.gp-lbl.lt{color:#1D9E75}
+.gp-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #1a2035;font-size:11px}
+.gp-row:last-of-type{border:none}
+.gp-key{color:#5F5E5A;min-width:100px}
+.gp-val{font-weight:500;text-align:right}
+.gp-val.pos{color:#1D9E75}.gp-val.neg{color:#E24B4A}.gp-val.neu{color:#888780}
+
+.outcgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 24px 12px}
+.outc{background:#080e1e;border-radius:8px;padding:14px;border:0.5px solid #1a2640}
+.outc.oc{border-color:#085041}.outc.oe{border-color:#4A1B0C}.outc.oi{border-color:#0C447C}
+.outc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:4px}
+.outc-name{font-size:12px;color:#888780;font-weight:500}
+.outc-pol{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600}
+.outc-pol.pc{background:#085041;color:#5DCAA5}.outc-pol.pe{background:#4A1B0C;color:#F0997B}.outc-pol.pi{background:#0C447C;color:#85B7EB}
+.delta-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:5px;margin-bottom:4px}
+.delta-row.gain{background:#0a1a10;border:0.5px solid #085041}
+.delta-row.loss{background:#150a08;border:0.5px solid #4A1B0C}
+.delta-row.neu-bg{background:#0d1220;border:0.5px solid #1a2035}
+.delta-lbl{font-size:10px;color:#888780}
+.delta-right{display:flex;align-items:center;gap:6px}
+.delta-val{font-size:13px;font-weight:700}
+.delta-val.pos{color:#1D9E75}.delta-val.neg{color:#E24B4A}.delta-val.neu{color:#888780}
+.delta-arrow{font-size:14px;font-weight:700}
+.delta-arrow.pos{color:#1D9E75}.delta-arrow.neg{color:#E24B4A}.delta-arrow.neu{color:#888780}
+.narrative{font-size:11px;color:#5F5E5A;line-height:1.6;margin-top:8px;padding-top:8px;border-top:0.5px solid #1a2035}
+
+.nxtbar{padding:0 24px 18px}
+.btn-next{width:100%;padding:11px;background:#080e1e;color:#ddd9d0;border:0.5px solid #1a2640;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500}
+.btn-next:hover{background:#0d1525}
+
+.endscr{text-align:center;padding:48px 24px}
+.end-t{font-size:22px;font-weight:700;margin-bottom:8px}
+.end-t.bad{color:#E24B4A}.end-t.good{color:#1D9E75}
+.end-s{font-size:12px;color:#5F5E5A;line-height:1.9;margin-bottom:22px}
+.end-g{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;text-align:left}
+.end-vc{background:#080e1e;border:0.5px solid #1a2640;border-radius:7px;padding:12px}
+.end-cn{font-size:11px;color:#888780;margin-bottom:4px;font-weight:500}
+.end-sc{font-size:22px;font-weight:700;margin-bottom:3px}
+.end-sc.g{color:#1D9E75}.end-sc.m{color:#BA7517}.end-sc.b{color:#E24B4A}
+.end-vl{font-size:10px;color:#5F5E5A;line-height:1.5}
+.btn-rst{padding:10px 24px;background:#26215C;color:#AFA9EC;border:0.5px solid #534AB7;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const COUNTRIES = [
+  {
+    id:'usa', name:'United States', flag:'🇺🇸', type:'G7 — Advanced Economy',
+    currency:'USD', cIcon:'$', cDesc:'Global reserve currency (60% of world trade)',
+    ep:10, rp:6, td:5, epL:'Dominant', rpL:'Moderate', tdL:'Low',
+    stats:[
+      {l:'GDP (2025)',v:'$30.6T',c:'nt'},
+      {l:'CO₂ per capita',v:'17.3t',c:'hi'},
+      {l:'Fossil dependency',v:'81%',c:'md'},
+      {l:'Vulnerability index',v:'0.28 — Low',c:'lo'},
+      {l:'Cumul. emissions',v:'#1 globally',c:'hi'}
+    ],
+    pledge:'Paris NDC: 50–52% below 2005 levels by 2030',
+    em:{coal:11,oil:36,gas:34,renew:19},
+    fd:8, cd:2, investD:3, ir:4, cr:1, vuln:0.28,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-0.4%',d:'neg'},{l:'Temp contribution',v:'+0.005°C',d:'neg'},{l:'Political standing',v:'NDC compliant',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+1.2% efficiency gains',d:'pos'},{l:'Climate impact',v:'Meaningful — #1 emitter reducing',d:'pos'},{l:'Geopolitical',v:'Diplomatic credibility restored',d:'pos'}],
+        note:'Conservation signals Paris compliance. USD reserve status buffers friction. As #1 historical emitter, every tonne conserved has outsized diplomatic weight — but domestic fossil lobbies will push back hard by round 3.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-0.8% construction spend',d:'neg'},{l:'Capital redirected',v:'$245B into grid + turbines',d:'neg'},{l:'Temp contribution',v:'+0.02°C equipment mfg',d:'neg'},{l:'Political standing',v:'Strong UN approval',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+3.1% green tech exports',d:'pos'},{l:'Debt burden',v:'Low — USD issuer, no financing cost',d:'pos'},{l:'Geopolitical',v:'Clean energy market dominance',d:'pos'}],
+        note:'USA is one of only two countries where renewable investment is unambiguously positive long-term. As a USD issuer it borrows at near-zero real rates — no debt trap. Green tech exports compound and USD dominance extends into clean energy markets.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+2.1%',d:'pos'},{l:'Temp contribution',v:'+0.06°C',d:'neg'},{l:'Political standing',v:'Paris NDC violated',d:'neg'}],
+        lt:[{l:'GDP trajectory',v:'-1.8% EU carbon tariff erosion',d:'neg'},{l:'Climate impact',v:'+0.3°C locked in by 2040',d:'neg'},{l:'Geopolitical',v:'EU CBAM + China trade bloc forms',d:'neg'}],
+        note:'Fossil expansion lifts GDP immediately. But EU carbon border tariffs erode those gains within 3 years. As #1 cumulative emitter, the geopolitical cost of defection is the highest of any country in this simulation.'
+      }
+    }
+  },
+  {
+    id:'china', name:'China', flag:'🇨🇳', type:'Emerging Superpower — Paradox Actor',
+    currency:'CNY / RMB', cIcon:'¥', cDesc:'USD-rivalling, internationalising',
+    ep:9, rp:8, td:7, epL:'Near-dominant', rpL:'High', tdL:'High',
+    stats:[
+      {l:'GDP (2025)',v:'$19.4T',c:'nt'},
+      {l:'CO₂ per capita',v:'10.8t',c:'hi'},
+      {l:'Fossil dependency',v:'87%',c:'hi'},
+      {l:'Vulnerability index',v:'0.38 — Medium',c:'md'},
+      {l:'Cumul. emissions',v:'#2 globally',c:'hi'}
+    ],
+    pledge:'Paris NDC: Peak emissions before 2030, carbon neutral by 2060',
+    em:{coal:56,oil:20,gas:9,renew:15},
+    fd:7, cd:2, investD:3, ir:5, cr:1, vuln:0.38,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-0.5%',d:'neg'},{l:'Temp contribution',v:'+0.005°C',d:'neg'},{l:'Political standing',v:'COP credibility boost',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+0.6% efficiency gains only',d:'pos'},{l:'Risk',v:'Coal regions face unemployment unrest',d:'neg'},{l:'Geopolitical',v:'Marginal diplomatic gain',d:'neu'}],
+        note:'China conserving is politically viable but economically underwhelming long-term. 56% coal dependency means conservation hits heavy industry hardest. Without investment, it just slows growth without building any replacement capacity — buying time, not solving the problem.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-0.7% construction spend',d:'neg'},{l:'Capital redirected',v:'$136B into solar + wind',d:'neg'},{l:'Temp contribution',v:'+0.02°C equipment mfg',d:'neg'},{l:'Political standing',v:'Global solar leadership',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+4.8% clean tech export dominance',d:'pos'},{l:'Risk',v:'Others become dependent on Chinese panels',d:'neg'},{l:'Geopolitical',v:'Clean tech leverage over developing world',d:'pos'}],
+        note:'China investing in renewables is the one genuinely positive long-term outcome — but with a hidden consequence. Chinese solar dominance means other countries become dependent on China for their energy infrastructure. India buying Chinese panels trades oil dependency for tech dependency.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+1.9%',d:'pos'},{l:'Temp contribution',v:'+0.07°C',d:'neg'},{l:'Political standing',v:'2060 neutrality pledge undermined',d:'neg'}],
+        lt:[{l:'GDP trajectory',v:'-2.1% health + productivity losses',d:'neg'},{l:'Climate impact',v:'Largest single-country warming driver',d:'neg'},{l:'Geopolitical',v:'Western sanctions coalition forms',d:'neg'}],
+        note:'China fossil expansion is the single highest-impact defection in the simulation. At 87% fossil dependency and largest total emitter, expansion here moves the global temperature needle more than any other country. Health costs from air pollution alone erode GDP gains within 5 years.'
+      }
+    }
+  },
+  {
+    id:'eu', name:'European Union', flag:'🇪🇺', type:'Climate Leader — Regulatory Bloc',
+    currency:'EUR', cIcon:'€', cDesc:'2nd reserve currency, CBAM enforcer',
+    ep:9, rp:4, td:6, epL:'Near-dominant', rpL:'Low', tdL:'Medium',
+    stats:[
+      {l:'GDP (2025)',v:'$18.4T',c:'nt'},
+      {l:'CO₂ per capita',v:'6.4t',c:'md'},
+      {l:'Fossil dependency',v:'68%',c:'md'},
+      {l:'Vulnerability index',v:'0.30 — Low',c:'lo'},
+      {l:'Cumul. emissions',v:'#3 historically',c:'md'}
+    ],
+    pledge:'European Green Deal: 55% below 1990 levels by 2030, net zero 2050',
+    em:{coal:14,oil:35,gas:19,renew:32},
+    fd:5, cd:2, investD:3, ir:5, cr:2, vuln:0.30,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-0.3%',d:'neg'},{l:'Temp contribution',v:'+0.005°C',d:'neg'},{l:'Political standing',v:'Green Deal on track',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+1.1% energy security gains',d:'pos'},{l:'Risk',v:'No capacity built — dependent on imports',d:'neg'},{l:'Geopolitical',v:'CBAM leverage intact but weakening',d:'neu'}],
+        note:'EU conservation is politically safe but strategically incomplete. It reduces emissions without building replacement capacity. By round 4, energy import dependency remains — EU is still buying Russian gas alternatives at premium prices without having built the infrastructure to end that dependency.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-0.6% construction spend',d:'neg'},{l:'Capital redirected',v:'€110B into wind + solar + grid',d:'neg'},{l:'Temp contribution',v:'+0.01°C equipment mfg',d:'neg'},{l:'Political standing',v:'Green Deal benchmark met',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+2.8% clean industrial exports',d:'pos'},{l:'Risk',v:'Competitiveness gap vs China solar costs',d:'neg'},{l:'Geopolitical',v:'CBAM punishes laggards, rewards EU',d:'pos'}],
+        note:'EU renewable investment is positive long-term but faces a real risk — European green tech costs more than Chinese alternatives. EU industry pays higher energy prices during the transition, creating a competitiveness gap vs non-transitioning economies. The CBAM partially compensates but creates trade tensions.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+0.8%',d:'pos'},{l:'Temp contribution',v:'+0.03°C',d:'neg'},{l:'Political standing',v:'Green Deal credibility collapses',d:'neg'}],
+        lt:[{l:'GDP trajectory',v:'-1.4% stranded assets + legal liability',d:'neg'},{l:'Climate impact',v:'Global standard-setter role destroyed',d:'neg'},{l:'Geopolitical',v:'Climate diplomacy leverage gone',d:'neg'}],
+        note:'EU fossil expansion would be the most damaging diplomatic event in climate history. It would invalidate CBAM, collapse the Green Deal legal framework, and give every other country cover to defect. The GDP gain is real but negligible compared to the institutional damage.'
+      }
+    }
+  },
+  {
+    id:'india', name:'India', flag:'🇮🇳', type:'Emerging — Rapidly Industrialising',
+    currency:'INR / Mixed', cIcon:'₹', cDesc:'USD-dependent trade, diversifying',
+    ep:6, rp:5, td:8, epL:'Rising', rpL:'Moderate', tdL:'High',
+    stats:[
+      {l:'GDP (2025)',v:'$4.1T',c:'nt'},
+      {l:'CO₂ per capita',v:'2.8t',c:'md'},
+      {l:'Fossil dependency',v:'77%',c:'md'},
+      {l:'Vulnerability index',v:'0.64 — High',c:'md'},
+      {l:'Cumul. emissions',v:'#4 historically',c:'md'}
+    ],
+    pledge:'Paris NDC: 45% emissions intensity reduction by 2030, 50% renewable power',
+    em:{coal:44,oil:25,gas:6,renew:25},
+    fd:6, cd:2, investD:3, ir:4, cr:1, vuln:0.64,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-0.6%',d:'neg'},{l:'Temp contribution',v:'+0.005°C',d:'neg'},{l:'Political standing',v:'Positive signal',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+0.5% — well below growth target',d:'neg'},{l:'Risk',v:'8% growth target missed by 3+ pts',d:'neg'},{l:'Geopolitical',v:'Climate finance unlocks partially',d:'neu'}],
+        note:'India conserving sounds cooperative but is politically untenable long-term. At 2.8t CO₂/capita vs USA 17.3t, India argues it has a right to develop first. Conservation without investment builds no replacement capacity — India slows its coal use but has nothing to replace it with.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-1.1% construction spend',d:'neg'},{l:'Debt burden',v:'5-8% interest rate — 4x higher than USA',d:'neg'},{l:'Temp contribution',v:'+0.02°C equipment mfg',d:'neg'},{l:'Political standing',v:'G20 climate praise',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+2.4% IF debt serviced — uncertain',d:'neu'},{l:'Risk',v:'Chinese panel dependency replaces oil dependency',d:'neg'},{l:'Geopolitical',v:'G20 co-leadership possible',d:'pos'}],
+        note:'India investing in renewables faces the financing trap — it borrows at 5-8% interest vs USA at near-zero. The same $45B investment costs India 4x more in debt servicing. Long-term gains are real but conditional on whether climate finance materialises to reduce that burden.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+1.8%',d:'pos'},{l:'Temp contribution',v:'+0.05°C',d:'neg'},{l:'Political standing',v:'NDC pledge undermined',d:'neg'}],
+        lt:[{l:'GDP trajectory',v:'-2.4% monsoon + crop failure',d:'neg'},{l:'Climate impact',v:'Vulnerability 0.64 — shocks amplify',d:'neg'},{l:'Geopolitical',v:'Climate finance blocked permanently',d:'neg'}],
+        note:'Coal expansion delivers near-term industrial output India genuinely needs. But vulnerability 0.64 means the resulting warming hits India\'s monsoon system — agricultural productivity collapses affect 600M farmers before any GDP gain compounds.'
+      }
+    }
+  },
+  {
+    id:'russia', name:'Russia', flag:'🇷🇺', type:'Petro-State — Arctic Beneficiary',
+    currency:'RUB / Oil-backed', cIcon:'RUB', cDesc:'Sanctions-hit, commodity-denominated',
+    ep:6, rp:10, td:5, epL:'Medium', rpL:'Maximum', tdL:'Low',
+    stats:[
+      {l:'GDP (2025)',v:'$2.2T',c:'nt'},
+      {l:'CO₂ per capita',v:'18.0t',c:'hi'},
+      {l:'Fossil dependency',v:'98%',c:'hi'},
+      {l:'Vulnerability index',v:'0.32 — Low-Med',c:'lo'},
+      {l:'Cumul. emissions',v:'#4 historically',c:'hi'}
+    ],
+    pledge:'Paris NDC: 30% below 1990 levels by 2030 (with accounting loopholes)',
+    em:{coal:12,oil:31,gas:55,renew:2},
+    fd:7, cd:2, investD:4, ir:3, cr:1, vuln:0.32,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-1.4%',d:'neg'},{l:'Temp contribution',v:'+0.008°C',d:'neg'},{l:'Political standing',v:'Minimal diplomatic gain',d:'neu'}],
+        lt:[{l:'GDP trajectory',v:'-1.1% — state budget shortfall',d:'neg'},{l:'Perverse incentive',v:'Warmer Arctic opens new oil fields',d:'neg'},{l:'Geopolitical',v:'Zero strategic benefit',d:'neg'}],
+        note:'Russia conserving is against its rational self-interest in almost every dimension. Oil and gas exports fund 40% of the federal budget. Warming Arctic literally opens new extraction zones. Russia is the only country where the climate getting worse is economically beneficial — making it the most structurally resistant to cooperation.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-1.8% strains war budget',d:'neg'},{l:'Capital redirected',v:'$40B — severe opportunity cost',d:'neg'},{l:'Temp contribution',v:'+0.02°C equipment mfg',d:'neg'},{l:'Political standing',v:'Geopolitically surprising',d:'neu'}],
+        lt:[{l:'GDP trajectory',v:'+0.3% — marginal, arrives late',d:'neu'},{l:'Stranded assets',v:'$2T+ oil infrastructure written off',d:'neg'},{l:'Geopolitical',v:'Sanctions relief possible — uncertain',d:'neu'}],
+        note:'Russia investing in renewables means writing off $2T of oil infrastructure — pipelines, refineries, an entire trained workforce. Even if sanctions relief materialises, the stranded asset cost dwarfs any renewable return for 15+ years. The rational calculus simply does not support it under current conditions.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+2.8%',d:'pos'},{l:'Temp contribution',v:'+0.07°C',d:'neg'},{l:'Political standing',v:'COP pariah — no consequence',d:'neu'}],
+        lt:[{l:'GDP trajectory',v:'+0.8% Arctic bonus + sustained exports',d:'pos'},{l:'Climate impact',v:'Accelerates Arctic feedback loop',d:'neg'},{l:'Geopolitical',v:'Western isolation — tolerable for Russia',d:'neu'}],
+        note:'Russia fossil expansion is the only choice in this simulation with a genuinely positive long-term economic case for the country making it. State budget funded, Arctic warming is a net positive, Western isolation is already the status quo. This is why Russia is the hardest country to bring into climate agreements.'
+      }
+    }
+  },
+  {
+    id:'brazil', name:'Brazil', flag:'🇧🇷', type:'Emerging — Amazon Carbon Sink',
+    currency:'BRL / Mixed', cIcon:'R$', cDesc:'Commodity-export dependent',
+    ep:6, rp:7, td:7, epL:'Rising', rpL:'High', tdL:'High',
+    stats:[
+      {l:'GDP (2025)',v:'$2.3T',c:'nt'},
+      {l:'CO₂ per capita',v:'2.9t',c:'lo'},
+      {l:'Fossil dependency',v:'55%',c:'md'},
+      {l:'Vulnerability index',v:'0.37 — Medium',c:'md'},
+      {l:'Cumul. emissions',v:'Deforestation top 5',c:'hi'}
+    ],
+    pledge:'Paris NDC: Net zero by 2050, halt illegal deforestation by 2030',
+    em:{coal:5,oil:35,gas:15,renew:45},
+    fd:4, cd:2, investD:3, ir:5, cr:2, vuln:0.37,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-0.5%',d:'neg'},{l:'Temp contribution',v:'+0.003°C',d:'neg'},{l:'Political standing',v:'Amazon protection signal',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+1.4% carbon credits + ecotourism',d:'pos'},{l:'Risk',v:'Agri lobby resists — political instability',d:'neg'},{l:'Geopolitical',v:'Climate finance unlocked',d:'pos'}],
+        note:'Brazil conserving preserves the Amazon — the planet\'s largest carbon sink. Economically viable through carbon credits and ecotourism. But Brazil\'s powerful agricultural lobby (the ruralistas) have historically blocked conservation — making this politically fragile even when economically rational.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-0.8% construction spend',d:'neg'},{l:'Capital redirected',v:'$18B into wind + solar',d:'neg'},{l:'Temp contribution',v:'+0.01°C equipment mfg',d:'neg'},{l:'Political standing',v:'BRICS climate leader',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+2.8% — strong given 45% base',d:'pos'},{l:'Risk',v:'Hydro vulnerable to drought from warming',d:'neg'},{l:'Geopolitical',v:'Green energy export potential',d:'pos'}],
+        note:'Brazil at 45% renewable is best positioned to invest of any emerging economy. But there is a real risk judges miss: Brazil\'s renewables are mostly hydro, and hydro is vulnerable to the very droughts that warming accelerates. Investing in wind and solar diversifies away from that single point of failure.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+2.2% agri + fossil gains',d:'pos'},{l:'Temp contribution',v:'+0.04°C',d:'neg'},{l:'Political standing',v:'Deforestation resumes',d:'neg'}],
+        lt:[{l:'GDP trajectory',v:'-3.1% Amazon tipping point',d:'neg'},{l:'Climate impact',v:'Carbon sink flips to carbon source',d:'neg'},{l:'Geopolitical',v:'EU deforestation law blocks exports',d:'neg'}],
+        note:'Brazil expanding means deforestation for cattle and soy — the real mechanism of Brazilian fossil expansion. Short-term agricultural gains are real and politically popular. Long-term the Amazon tipping point flips from absorbing 2 billion tonnes of CO₂ annually to emitting it — a catastrophic reversal that accelerates global warming.'
+      }
+    }
+  },
+  {
+    id:'saudi', name:'Saudi Arabia', flag:'🇸🇦', type:'Petro-State — OPEC Anchor',
+    currency:'SAR / Oil-pegged', cIcon:'SR', cDesc:'USD-pegged, oil revenues fund 70% of budget',
+    ep:7, rp:10, td:6, epL:'High', rpL:'Maximum', tdL:'Medium',
+    stats:[
+      {l:'GDP (2025)',v:'$1.1T',c:'nt'},
+      {l:'CO₂ per capita',v:'22.8t',c:'hi'},
+      {l:'Fossil dependency',v:'99%',c:'hi'},
+      {l:'Vulnerability index',v:'0.41 — Medium',c:'md'},
+      {l:'Cumul. emissions',v:'Top 10 globally',c:'hi'}
+    ],
+    pledge:'Paris NDC: 278 Mt CO₂ reduction by 2030, net zero by 2060',
+    em:{coal:0,oil:62,gas:37,renew:1},
+    fd:9, cd:2, investD:4, ir:3, cr:1, vuln:0.41,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-2.1%',d:'neg'},{l:'Temp contribution',v:'+0.003°C',d:'neg'},{l:'Political standing',v:'Unprecedented diplomatic signal',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'-2.4% — Vision 2030 defunded',d:'neg'},{l:'Risk',v:'Social contract breaks — welfare state cuts',d:'neg'},{l:'Geopolitical',v:'OPEC fractures',d:'neg'}],
+        note:'Saudi Arabia conserving is historically unprecedented and economically self-destructive in the short to medium term. Oil funds the entire welfare state — subsidised fuel, housing, healthcare. Cutting production cuts the social contract that maintains political stability. The Crown Prince cannot survive this politically.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-1.6% construction spend',d:'neg'},{l:'Capital redirected',v:'$18B into NEOM solar',d:'neg'},{l:'Temp contribution',v:'+0.02°C equipment mfg',d:'neg'},{l:'Political standing',v:'Vision 2030 on track',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+0.8% — marginal, arrives post-2040',d:'neu'},{l:'Risk',v:'Oil revenues still needed to fund transition itself',d:'neg'},{l:'Geopolitical',v:'Green hydrogen potential — distant',d:'neu'}],
+        note:'Saudi renewable investment is real — NEOM is genuinely happening. But the long-term economics are weak: Saudi needs oil revenues to fund the renewable transition. Green hydrogen exports are 15+ years away. The investment is strategically rational but economically positive only after 2035 at the earliest.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+3.4%',d:'pos'},{l:'Temp contribution',v:'+0.05°C',d:'neg'},{l:'Political standing',v:'COP blocked again — expected',d:'neg'}],
+        lt:[{l:'GDP trajectory',v:'+1.8% through 2035 then cliff',d:'pos'},{l:'Risk',v:'Peak oil demand by 2030 — stranded reserves',d:'neg'},{l:'Geopolitical',v:'OPEC+ leverage while it lasts',d:'neu'}],
+        note:'Saudi fossil expansion is rational for the next decade and almost certain to happen regardless. The IEA projects peak oil demand by 2030. Saudi Arabia is racing to extract maximum value from reserves before the energy transition makes them permanently less valuable. Expansion now is economically rational even knowing the cliff ahead.'
+      }
+    }
+  },
+  {
+    id:'nigeria', name:'Nigeria', flag:'🇳🇬', type:'Developing — Oil-Dependent Economy',
+    currency:'NGN / Oil-backed', cIcon:'NGN', cDesc:'Oil revenues = 60% of state budget',
+    ep:3, rp:7, td:9, epL:'Constrained', rpL:'High (oil)', tdL:'Critical',
+    stats:[
+      {l:'GDP (2025)',v:'$0.5T',c:'nt'},
+      {l:'CO₂ per capita',v:'0.6t',c:'lo'},
+      {l:'Fossil dependency',v:'89%',c:'hi'},
+      {l:'Vulnerability index',v:'0.81 — Critical',c:'hi'},
+      {l:'Cumul. emissions',v:'#32 globally',c:'lo'}
+    ],
+    pledge:'Paris NDC: 20% unconditional, 47% conditional reduction by 2030',
+    em:{coal:1,oil:55,gas:33,renew:11},
+    fd:5, cd:2, investD:3, ir:4, cr:1, vuln:0.81,
+    cons:{
+      conserve:{
+        st:[{l:'GDP impact',v:'-1.2%',d:'neg'},{l:'Temp contribution',v:'+0.001°C',d:'neg'},{l:'Political standing',v:'Praised by UN',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+0.2% — only if climate finance arrives',d:'neu'},{l:'Inequity exposed',v:'29x lower emissions than USA, same pressure',d:'neg'},{l:'Geopolitical',v:'Moral authority — no economic benefit',d:'neu'}],
+        note:'Nigeria conserving contributes almost nothing globally — at 0.6t CO₂/capita it is 29x lower than the USA. Yet it bears a real economic cost and still suffers from warming caused by others. This is the simulation\'s most important lesson: the countries least responsible face the greatest pressure to act and the least capacity to do so.'
+      },
+      invest:{
+        st:[{l:'GDP impact',v:'-1.4% construction spend',d:'neg'},{l:'Debt burden',v:'$7B at 8% = $560M/yr servicing cost',d:'neg'},{l:'Temp contribution',v:'+0.01°C equipment mfg',d:'neg'},{l:'Political standing',v:'Climate finance eligible',d:'pos'}],
+        lt:[{l:'GDP trajectory',v:'+1.2% — IF green debt relief materialises',d:'neu'},{l:'Risk',v:'If USA+China expand, warming hits Nigeria anyway',d:'neg'},{l:'Geopolitical',v:'Moral case for reparations strengthens',d:'pos'}],
+        note:'Nigeria investing faces the hardest version of the prisoner\'s dilemma. Even if Nigeria invests every round, USA and China expanding fossils means warming arrives regardless — Nigeria pays the transition cost AND suffers the climate damage. The long-term gain exists only if global cooperation also happens. Individually rational investment is collectively insufficient.'
+      },
+      expand:{
+        st:[{l:'GDP impact',v:'+3.2%',d:'pos'},{l:'Temp contribution',v:'+0.02°C',d:'neg'},{l:'Political standing',v:'Fiscal survival — understandable',d:'neu'}],
+        lt:[{l:'GDP trajectory',v:'-4.8% flood + drought + displacement',d:'neg'},{l:'Climate impact',v:'Vulnerability 0.81 — catastrophic exposure',d:'neg'},{l:'Geopolitical',v:'Reparations demand strengthens globally',d:'neg'}],
+        note:'Oil funds 60% of Nigeria\'s budget — expansion is fiscal survival. But vulnerability 0.81 creates a self-defeating trap: the warming from expansion destroys the agricultural sector the oil revenue was meant to develop. Nigeria expands to fund a future that the expansion itself prevents.'
+      }
+    }
+  }
+];
+
+const MAX_BUDGET=100, MAX_ROUNDS=5, BASE_TEMP=1.2;
+let S = {
+  budget:MAX_BUDGET, round:1, choices:{}, phase:'choose', termView:null,
+  scores:{usa:0,china:0,eu:0,india:0,russia:0,brazil:0,saudi:0,nigeria:0},
+  infra:{usa:0,china:0,eu:0,india:0,russia:0,brazil:0,saudi:0,nigeria:0},
+  temperature:BASE_TEMP
+};
+
+function bc(b){return b/MAX_BUDGET>0.5?'ok':b/MAX_BUDGET>0.25?'warn':'crit'}
+function pc(v){return v>=8?'#E24B4A':v>=5?'#BA7517':'#1D9E75'}
+
+function calcDelta(){
+  let drain=0, regen=0;
+  COUNTRIES.forEach(c=>{
+    const ch=S.choices[c.id];
+    const ib=Math.floor(S.infra[c.id]/3);
+    if(ch==='expand') drain+=c.fd;
+    else if(ch==='invest'){drain+=Math.max(1,c.investD-ib); regen+=c.ir+ib;}
+    else {drain+=Math.max(1,c.cd); regen+=c.cr;}
+  });
+  return{drain,regen,net:regen-drain};
+}
+
+function runSimulation(){
+  const delta=calcDelta();
+  S.budget=Math.min(MAX_BUDGET,Math.max(0,S.budget+delta.net));
+  const td=COUNTRIES.reduce((s,c)=>s+(S.choices[c.id]==='expand'?0.06:S.choices[c.id]==='invest'?0.02:0.005),0);
+  S.temperature=Math.round((S.temperature+td)*1000)/1000;
+  COUNTRIES.forEach(c=>{
+    if(S.choices[c.id]==='invest') S.infra[c.id]=Math.min(10,S.infra[c.id]+1);
+    if(S.choices[c.id]==='expand') S.infra[c.id]=Math.max(0,S.infra[c.id]-1);
+    S.scores[c.id]+=(S.choices[c.id]==='invest'?2:S.choices[c.id]==='conserve'?1:-2);
+  });
+  S.phase='term-pick';
+  render();
+}
+
+const SDG = {
+  usa:{
+    status:'at-risk',
+    statusLabel:'At risk',
+    gaps:[
+      {goal:'SDG 7 — Affordable clean energy',text:'81% fossil dependency. USA needs 50%+ renewable electricity by 2030 per NDC. Current trajectory misses by 15 percentage points.'},
+      {goal:'SDG 13 — Climate action',text:'#1 cumulative emitter. Paris pledge of 50–52% below 2005 requires cutting 1.8 GtCO₂/yr by 2030. Current pace insufficient.'},
+      {goal:'SDG 17 — Partnerships for goals',text:'USA climate finance commitments to developing nations chronically underfunded — $11.4B pledged vs $100B global target.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Reinstate and strengthen EPA methane regulations. Accelerate IRA clean energy tax credit deployment to utilities.'},
+      {label:'Medium term',text:'Fund $50B Green Climate Fund contribution. Pass carbon pricing legislation to make fossil expansion economically unviable by 2027.'},
+      {label:'Structural',text:'Ratify loss and damage framework. As #1 cumulative emitter, USA has highest obligation to fund climate adaptation in vulnerable nations.'}
+    ]
+  },
+  china:{
+    status:'at-risk',
+    statusLabel:'At risk',
+    gaps:[
+      {goal:'SDG 7 — Affordable clean energy',text:'56% coal in energy mix. Pledge to peak emissions before 2030 requires coal capacity to stop growing by 2025 — currently still expanding.'},
+      {goal:'SDG 11 — Sustainable cities',text:'Air pollution from coal causes 1.4M premature deaths annually — direct SDG 3 (good health) failure embedded in energy policy.'},
+      {goal:'SDG 13 — Climate action',text:'Largest total emitter. Carbon neutrality by 2060 requires 4–5% annual emission reductions from 2030. No credible pathway yet published.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Impose hard cap on new coal plant approvals. Enforce existing coal retirement schedule for plants over 30 years old.'},
+      {label:'Medium term',text:'Publish detailed 2060 neutrality sectoral roadmap. Extend ETS carbon market to cover heavy industry and aviation by 2026.'},
+      {label:'Structural',text:'Use Belt and Road Initiative to export clean energy rather than coal infrastructure — currently 40% of BRI energy projects are fossil.'}
+    ]
+  },
+  eu:{
+    status:'on-track',
+    statusLabel:'On track',
+    gaps:[
+      {goal:'SDG 7 — Affordable clean energy',text:'68% fossil dependency. Green Deal targets 45% renewable electricity by 2030. Current pace achievable but requires sustained investment.'},
+      {goal:'SDG 10 — Reduced inequalities',text:'Carbon transition costs disproportionately burden lower-income EU households — energy poverty affects 41M Europeans.'},
+      {goal:'SDG 17 — Global partnerships',text:'CBAM creates trade friction with developing nations who cannot afford clean energy transitions — risks isolating climate cooperation.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Expand CBAM scope to cover all industrial goods by 2026. Use CBAM revenues to fund Just Transition Fund for affected developing nations.'},
+      {label:'Medium term',text:'Accelerate REPowerEU — 45% renewable target by 2030 requires doubling current installation rate. Remove permitting bottlenecks now.'},
+      {label:'Structural',text:'Reform EU energy poverty directive. Ensure green transition does not deepen inequality — pair carbon pricing with household dividends.'}
+    ]
+  },
+  india:{
+    status:'off-track',
+    statusLabel:'Off track',
+    gaps:[
+      {goal:'SDG 7 — Affordable clean energy',text:'77% fossil dependency, 44% coal. 50% renewable power target by 2030 requires adding 450 GW — financing gap of $150B remains unfilled.'},
+      {goal:'SDG 1 — No poverty',text:'Energy access drives poverty reduction. 600M rural Indians depend on agriculture — climate disruption to monsoon directly undermines SDG 1.'},
+      {goal:'SDG 13 — Climate action',text:'Emissions intensity reduction of 45% by 2030 is achievable but requires green financing at 4–5x current rates. Debt trap risk is real.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Negotiate concessional climate finance at <1% interest from Green Climate Fund and multilateral development banks to replace market-rate borrowing.'},
+      {label:'Medium term',text:'Accelerate domestic solar manufacturing to reduce Chinese panel dependency. India has the engineering capacity — needs policy incentives.'},
+      {label:'Structural',text:'Demand loss and damage compensation from historical emitters. India\'s 2.8t CO₂/capita vs USA 17.3t makes the historical inequity legally and morally actionable.'}
+    ]
+  },
+  russia:{
+    status:'off-track',
+    statusLabel:'Off track',
+    gaps:[
+      {goal:'SDG 13 — Climate action',text:'Paris pledge of 30% below 1990 uses accounting loopholes for forest sinks. Real emission reductions are near zero. 98% fossil dependency makes SDG 7 completely unmet.'},
+      {goal:'SDG 16 — Peace and institutions',text:'Fossil revenues fund military expansion. Energy weapon use against Europe in 2022 directly violated SDG 16 principles of peaceful cooperation.'},
+      {goal:'SDG 17 — Partnerships',text:'Russia has exited meaningful climate cooperation. G20 climate finance commitments unfulfilled. Active obstruction at COP proceedings documented.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Honor existing Paris pledge without accounting loopholes. Publish transparent national emissions inventory independently verified.'},
+      {label:'Medium term',text:'Develop Siberian wind and solar potential — Russia has world-class renewable resources that remain entirely untapped at 2% of energy mix.'},
+      {label:'Structural',text:'Re-engage with multilateral climate finance. Russian Arctic development under warming requires international climate cooperation to remain viable long-term.'}
+    ]
+  },
+  brazil:{
+    status:'at-risk',
+    statusLabel:'At risk',
+    gaps:[
+      {goal:'SDG 15 — Life on land',text:'Amazon deforestation reached 11,568 km² in 2022. Pledge to halt illegal deforestation by 2030 requires sustained enforcement — politically contested.'},
+      {goal:'SDG 13 — Climate action',text:'Brazil\'s net-zero 2050 pledge is achievable given 45% renewable base — but only if deforestation stops. Currently deforestation contributes 40% of Brazil\'s emissions.'},
+      {goal:'SDG 2 — Zero hunger',text:'Amazon degradation reduces rainfall across South America affecting agricultural productivity for 250M people beyond Brazil\'s borders.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Fully fund and staff IBAMA (environmental enforcement agency). Deforestation enforcement collapsed 2019–2022 — rebuild institutional capacity now.'},
+      {label:'Medium term',text:'Monetise Amazon conservation through Article 6 carbon markets. Brazil could earn $50B+ annually from carbon credits — more than deforestation generates.'},
+      {label:'Structural',text:'Diversify hydro with wind and solar to reduce vulnerability to droughts. Amazon degradation reduces rainfall — hydro dependency is a long-term strategic risk.'}
+    ]
+  },
+  saudi:{
+    status:'off-track',
+    statusLabel:'Off track',
+    gaps:[
+      {goal:'SDG 7 — Affordable clean energy',text:'99% fossil dependency. 22.8t CO₂/capita — highest in simulation. Vision 2030 renewable target of 50% by 2030 is drastically off pace at <1% today.'},
+      {goal:'SDG 13 — Climate action',text:'Net zero by 2060 pledge has no credible sectoral roadmap. Saudi Aramco expansion plans directly contradict the pledge.'},
+      {goal:'SDG 17 — Partnerships',text:'Saudi Arabia has actively lobbied to weaken COP language — documented at COP26, 27, 28. Obstructing global cooperation is a direct SDG 17 violation.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Stop lobbying to weaken COP fossil fuel phase-out language. Commit to no new oil field development beyond existing approved projects.'},
+      {label:'Medium term',text:'Accelerate NEOM and Red Sea Project solar targets. Saudi has world\'s best solar irradiance — 1% of land in solar panels covers 100% of electricity demand.'},
+      {label:'Structural',text:'Use oil revenues now to fund the post-oil transition — sovereign wealth fund ($600B) should shift to renewable infrastructure investment before reserves are stranded.'}
+    ]
+  },
+  nigeria:{
+    status:'off-track',
+    statusLabel:'Off track',
+    gaps:[
+      {goal:'SDG 7 — Affordable clean energy',text:'85M Nigerians lack electricity access — the highest energy poverty count in Africa. SDG 7 requires universal access by 2030. Current trajectory misses by 2040+.'},
+      {goal:'SDG 13 — Climate action',text:'Conditional 47% reduction pledge requires $29B in international climate finance that has not materialised. Without it, only unconditional 20% is feasible.'},
+      {goal:'SDG 1 — No poverty',text:'Vulnerability 0.81 means climate shocks — already occurring — push millions below poverty line annually. Climate adaptation IS poverty reduction for Nigeria.'}
+    ],
+    actions:[
+      {label:'Immediate',text:'Invoke loss and damage mechanism at UNFCCC. Nigeria has a legal and moral case — 0.6t CO₂/capita yet faces catastrophic climate impacts from others\' emissions.'},
+      {label:'Medium term',text:'Deploy distributed solar mini-grids to reach 85M unelectrified Nigerians. Cheaper than grid extension, no fossil dependency, directly fulfils SDG 7.'},
+      {label:'Structural',text:'Reform fossil fuel subsidies ($10B/yr) and redirect to renewable infrastructure. Subsidy reform with targeted cash transfers protects poor households while enabling transition.'}
+    ]
+  }
+};
+
+function showTerm(t){S.termView=t; S.phase='results'; render();}
+function nextRound(){
+  S.round++;
+  S.choices={};
+  S.phase='choose';
+  S.termView=null;
+  if(S.budget<=0||S.round>MAX_ROUNDS) S.phase='endscreen';
+  render();
+}
+function restart(){
+  S={budget:MAX_BUDGET,round:1,choices:{},phase:'choose',termView:null,
+     scores:{usa:0,china:0,eu:0,india:0,russia:0,brazil:0,saudi:0,nigeria:0},
+     infra:{usa:0,china:0,eu:0,india:0,russia:0,brazil:0,saudi:0,nigeria:0},
+     temperature:BASE_TEMP};
+  render();
+}
+function getVerdict(s){return s>=5?{l:'Cooperative Actor',c:'g'}:s>=0?{l:'Neutral Actor',c:'m'}:{l:'Defecting Actor',c:'b'}}
+
+function getSuggestedPolicy(country, currentChoice, allChoices, budget, temperature, infraScore, round) {
+  const expanders = COUNTRIES.filter(c => allChoices[c.id] === 'expand' && c.id !== country.id);
+  const investors = COUNTRIES.filter(c => allChoices[c.id] === 'invest' && c.id !== country.id);
+  const budgetPct = budget / 100;
+  const nearLimit = temperature >= 1.35;
+  const highVuln = country.vuln >= 0.6;
+  const petroState = country.fd >= 7 && country.rp >= 8;
+  const g7 = country.ep >= 9;
+  const infraBonus = infraScore >= 3;
+
+  if(country.id === 'russia' || country.id === 'saudi') {
+    if(expanders.length <= 2 && investors.length >= 3) {
+      return {
+        action: 'Consider renewable investment',
+        reason: `${investors.length} nations investing signals a green energy bloc forming. Continued fossil expansion risks geopolitical isolation as clean energy alliances strengthen. Partial diversification now preserves leverage.`
+      };
+    }
+    return {
+      action: 'Fossil expansion likely continues',
+      reason: `With ${expanders.length} other nations also expanding, collective pressure to transition remains low. Resource power of ${country.rpL.toLowerCase()} gives ${country.name} continued leverage — but peak fossil demand window is narrowing.`
+    };
+  }
+
+  if(budgetPct < 0.25) {
+    return {
+      action: 'Conservation — urgent',
+      reason: `Carbon budget at ${Math.round(budgetPct*100)}% — collapse imminent. Even one more round of fossil expansion by the majority exhausts the commons. Conservation buys critical time for the group to stabilise.`
+    };
+  }
+
+  if(highVuln && expanders.length >= 3) {
+    return {
+      action: 'Renewable investment + invoke loss and damage',
+      reason: `${expanders.length} nations expanded fossils this round. With vulnerability ${country.vuln}, ${country.name} will absorb disproportionate climate damage from others\' choices. Investment builds resilience while the loss and damage mechanism creates legal pressure on high emitters.`
+    };
+  }
+
+  if(g7 && currentChoice === 'expand') {
+    return {
+      action: 'Switch to renewable investment',
+      reason: `As a G7 economy with economic power ${country.epL.toLowerCase()}, continued fossil expansion invites EU CBAM tariffs and undermines multilateral climate architecture. The long-term cost of diplomatic isolation exceeds short-term energy revenue gains.`
+    };
+  }
+
+  if(infraBonus) {
+    return {
+      action: 'Renewable investment — compounding returns',
+      reason: `Infrastructure index at ${infraScore}/10 means investment now costs less and regenerates more. Each additional round of investment compounds — this is the optimal window to accelerate before budget pressure forces conservation.`
+    };
+  }
+
+  if(nearLimit && currentChoice !== 'invest') {
+    return {
+      action: 'Renewable investment — temperature critical',
+      reason: `Global temperature at ${temperature.toFixed(3)}°C — within 0.15°C of the 1.5°C Paris threshold. Renewable investment is the only policy that regenerates the carbon budget. Conservation merely slows depletion. Only collective investment can stabilise the trajectory at this point.`
+    };
+  }
+
+  if(currentChoice === 'invest' && investors.length >= 3) {
+    return {
+      action: 'Maintain renewable investment',
+      reason: `${investors.length} nations investing simultaneously creates compounding global effect — budget regeneration accelerates when multiple countries invest. Maintaining this coalition is more valuable than any individual policy switch.`
+    };
+  }
+
+  if(currentChoice === 'conserve' && expanders.length >= 4) {
+    return {
+      action: 'Escalate to renewable investment',
+      reason: `Conservation reduces your drain but does not offset ${expanders.length} nations expanding fossils. The budget is still depleting. Only investment regenerates the budget — conservation alone cannot stabilise the commons under this level of defection.`
+    };
+  }
+
+  return {
+    action: 'Renewable investment',
+    reason: `Given current trajectory — ${Math.round(budgetPct*100)}% budget remaining, ${temperature.toFixed(3)}°C temperature — investment offers the best balance of economic stability and climate impact. Infrastructure built now compounds over the remaining ${5 - round} rounds.`
+  };
+}
+
+function render(){
+  const root=document.getElementById('root'); if(!root) return;
+  const bpct=Math.round(S.budget/MAX_BUDGET*100);
+  const allChosen=COUNTRIES.every(c=>S.choices[c.id]);
+  const previewDelta=allChosen?calcDelta():null;
+
+  const refreshBtn='<button class="btn-refresh" onclick="restart()">&#8635; New simulation</button>';
+
+  if(S.phase==='endscreen'){
+    const collapsed=S.budget<=0||S.temperature>=1.5;
+    let h=`<div class="topbar"><div><div class="logo">Climate<span>Sim</span></div><div class="tagline">AI Climate Negotiation Platform · 8 Nations · 2025 Data</div></div><div class="top-right">${refreshBtn}</div></div>
+    <div class="endscr">
+      <div class="end-t ${collapsed?'bad':'good'}">${collapsed?'Climate Threshold Breached':'Simulation Complete'}</div>
+      <div class="end-s">Final temperature: ${S.temperature.toFixed(3)}°C · Carbon budget: ${S.budget}/${MAX_BUDGET} · ${S.round} rounds completed<br>${collapsed?'Collective action failure — economic self-interest prevailed over planetary stability.':'Review cooperation records below. Real negotiations resume at COP.'}</div>
+      <div class="end-g">`;
+    COUNTRIES.forEach(c=>{
+      const v=getVerdict(S.scores[c.id]);
+      h+=`<div class="end-vc"><div class="end-cn">${c.flag} ${c.name}</div>
+      <div class="end-sc ${v.c}">${S.scores[c.id]>0?'+':''}${S.scores[c.id]}</div>
+      <div class="end-vl">${v.l}<br>Infra: ${S.infra[c.id]}/10<br>${c.currency}</div></div>`;
+    });
+    h+=`</div><button class="btn-rst" onclick="restart()">Initiate new simulation</button></div>`;
+    root.innerHTML=h; return;
+  }
+
+  let h=`<div class="topbar">
+    <div><div class="logo">Climate<span>Sim</span></div><div class="tagline">AI Climate Negotiation Platform · 8 Nations · IMF/IEA/EDGAR 2025 Data</div></div>
+    <div class="top-right"><div class="rpill">Round ${S.round}/${MAX_ROUNDS}</div>${refreshBtn}</div>
+  </div>
+  <div class="mbar">
+    <div class="met"><div class="met-l">Global temperature</div><div class="met-v temp">${S.temperature.toFixed(3)}°C</div><div class="met-s">Paris limit: 1.5°C</div></div>
+    <div class="met"><div class="met-l">Carbon budget</div><div class="met-v ${bc(S.budget)}">${S.budget}/${MAX_BUDGET}</div><div class="met-s">${bpct}% remaining</div></div>
+    <div class="met"><div class="met-l">Global infra index</div><div class="met-v nt">${Object.values(S.infra).reduce((a,b)=>a+b,0)}/80</div><div class="met-s">Renewable capacity built</div></div>
+    <div class="met"><div class="met-l">Nations submitted</div><div class="met-v nt">${Object.keys(S.choices).length}/8</div><div class="met-s">This round</div></div>
+  </div>
+  <div class="bwrap">
+    <div class="btop"><span>Global carbon budget</span><span>Sources: IPCC AR6 · IMF WEO Oct 2025 · EDGAR 2025 · IEA 2024 · ND-GAIN 2023</span></div>
+    <div class="trk"><div class="fill ${bc(S.budget)}" style="width:${bpct}%"></div></div>
+    ${previewDelta?`<div class="preview-note">Projected this round: −${previewDelta.drain} drain · +${previewDelta.regen} regen · net ${previewDelta.net>=0?'+':''}${previewDelta.net}</div>`:'<div class="preview-note">Renewable investment regenerates the budget · Infrastructure compounds over rounds</div>'}
+  </div>
+  <div class="source-bar">GDP: IMF WEO Oct 2025 · CO₂/capita: EDGAR 2025 / Visual Capitalist · Vulnerability: ND-GAIN 2023 · Energy mix: IEA 2024</div>`;
+
+  if(S.phase==='term-pick'){
+    h+=`<div class="chosen-grid">`;
+    COUNTRIES.forEach(c=>{
+      const ch=S.choices[c.id];
+      const polLabel=ch==='conserve'?'Conservation':ch==='invest'?'Renew. Investment':'Fossil Expansion';
+      const polCls=ch==='conserve'?'pc':ch==='invest'?'pi':'pe';
+      h+=`<div class="cs-card"><div class="cs-flag">${c.flag}</div><div class="cs-name">${c.name}</div><div class="cs-choice ${polCls}">${polLabel}</div></div>`;
+    });
+    h+=`</div>`;
+    h+=`<div class="term-pick">
+      <div class="tp-title">All 8 nations have submitted their policies</div>
+      <div class="tp-sub">Temperature +${(COUNTRIES.reduce((s,c)=>s+(S.choices[c.id]==='expand'?0.06:S.choices[c.id]==='invest'?0.02:0.005),0)).toFixed(3)}°C this round · Budget net ${previewDelta&&previewDelta.net>=0?'+':''}${previewDelta?previewDelta.net:0}</div>
+      <div class="tp-btns" style="grid-template-columns:1fr 1fr 1fr">
+        <button class="tp-btn st" onclick="showTerm('st')">
+          Short term effects
+          <div class="tp-hint">Immediate GDP · Climate · Political fallout</div>
+        </button>
+        <button class="tp-btn lt" onclick="showTerm('lt')">
+          Long term effects
+          <div class="tp-hint">10-year trajectory · Warming path · Geopolitics</div>
+        </button>
+        <button class="tp-btn" style="background:#26150a;color:#FAC775;border:0.5px solid #633806" onclick="showTerm('sg')">
+          SDG pathways
+          <div class="tp-hint">UN goals gap analysis · Policy recommendations</div>
+        </button>
+      </div>
+    </div>`;
+    root.innerHTML=h; return;
+  }
+
+  if(S.phase==='results'){
+    const tv=S.termView;
+    const expandCount=COUNTRIES.filter(c=>S.choices[c.id]==='expand').length;
+    const investCount=COUNTRIES.filter(c=>S.choices[c.id]==='invest').length;
+    const globalST=[
+      {k:'Global GDP',v:expandCount>4?'+1.1% short term (fossil surge)':investCount>4?'-0.5% (transition investment)':'Mixed — cooperation partial',d:expandCount>4?'pos':investCount>4?'neg':'neu'},
+      {k:'Temperature this round',v:`+${(COUNTRIES.reduce((s,c)=>s+(S.choices[c.id]==='expand'?0.06:S.choices[c.id]==='invest'?0.02:0.005),0)).toFixed(3)}°C`,d:'neg'},
+      {k:'Paris framework',v:expandCount>4?'Under serious strain — NDCs violated':investCount>4?'Strengthened — G8 cooperation signal':'Partial — fragile consensus',d:expandCount>4?'neg':investCount>4?'pos':'neu'}
+    ];
+    const globalLT=[
+      {k:'Global GDP trajectory',v:S.budget<40?'Recession risk — warming exceeds 1.8°C':'Green transition economies gaining edge',d:S.budget<40?'neg':'pos'},
+      {k:'Temperature projection',v:`${S.temperature.toFixed(3)}°C now → est. ${(S.temperature+0.12*(MAX_ROUNDS-S.round)).toFixed(2)}°C by round ${MAX_ROUNDS}`,d:'neg'},
+      {k:'Geopolitical order',v:expandCount>4?'Fossil bloc vs green energy bloc fracturing':'Multilateral climate architecture possible',d:expandCount>4?'neg':'pos'}
+    ];
+    const gData=tv==='st'?globalST:globalLT;
+
+    h+=`<div class="term-toggle">
+      <span class="tt-lbl">Viewing:</span>
+      <button class="tt-btn ${tv==='st'?'st-on':'off'}" onclick="showTerm('st')">Short term</button>
+      <button class="tt-btn ${tv==='lt'?'lt-on':'off'}" onclick="showTerm('lt')">Long term</button>
+      <button class="tt-btn ${tv==='sg'?'sg-on':'off'}" onclick="showTerm('sg')">SDG pathways</button>
+    </div>`;
+
+    if(tv==='sg'){
+      const expandCount2=COUNTRIES.filter(c=>S.choices[c.id]==='expand').length;
+      h+=`<div class="sdg-panel">
+        <div class="sdg-panel-lbl">GLOBAL SDG STATUS — ROUND ${S.round} · UN SUSTAINABLE DEVELOPMENT GOALS 2030 FRAMEWORK</div>
+        <div class="sdg-global-row"><span class="sdg-gk">Nations on track</span><span class="sdg-gv">${COUNTRIES.filter(c=>SDG[c.id].status==='on-track').map(c=>c.flag).join(' ')||'None this round'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">Nations at risk</span><span class="sdg-gv">${COUNTRIES.filter(c=>SDG[c.id].status==='at-risk').map(c=>c.flag).join(' ')||'None'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">Nations off track</span><span class="sdg-gv">${COUNTRIES.filter(c=>SDG[c.id].status==='off-track').map(c=>c.flag).join(' ')||'None'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">SDG 13 threat level</span><span class="sdg-gv">${expandCount2>4?'Critical — majority defecting':expandCount2>2?'Elevated — cooperation fragile':'Manageable — cooperation holding'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">Paris alignment</span><span class="sdg-gv">${S.temperature.toFixed(3)}°C current · ${S.temperature>=1.4?'Red alert — 1.5°C threshold imminent':S.temperature>=1.3?'Warning — trajectory above 1.5°C path':'On track — within budget'}</span></div>
+      </div>`;
+      h+=`<div class="sdg-grid">`;
+      COUNTRIES.forEach(c=>{
+        const sdg=SDG[c.id];
+        const ch=S.choices[c.id];
+        const polLabel=ch==='conserve'?'Conservation':ch==='invest'?'Renew. Investment':'Fossil Expansion';
+        const polCls=ch==='conserve'?'pc':ch==='invest'?'pi':'pe';
+        h+=`<div class="sdg-card">
+          <div class="sdg-top">
+            <div class="sdg-name">${c.flag} ${c.name}</div>
+            <div class="sdg-status ${sdg.status}">${sdg.statusLabel}</div>
+          </div>
+          <div style="font-size:9px;margin-bottom:8px;color:#5F5E5A">Chose: <span class="outc-pol ${polCls}" style="font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;background:${ch==='expand'?'#4A1B0C':ch==='invest'?'#0C447C':'#085041'};color:${ch==='expand'?'#F0997B':ch==='invest'?'#85B7EB':'#5DCAA5'}">${polLabel}</span></div>`;
+        sdg.gaps.forEach(g=>{
+          h+=`<div class="sdg-goal"><div class="sdg-goal-tag">${g.goal}</div><div class="sdg-goal-text">${g.text}</div></div>`;
+        });
+        h+=`<div class="sdg-action"><div class="sdg-action-tag">RECOMMENDED PATHWAY</div>`;
+        sdg.actions.forEach(a=>{
+          h+=`<div class="sdg-goal-text" style="margin-bottom:4px"><span style="color:#639922;font-weight:600">${a.label}:</span> ${a.text}</div>`;
+        });
+        h+=`</div></div>`;
+      });
+      h+=`</div>`;
+      if(S.round<MAX_ROUNDS&&S.budget>0){
+        h+=`<div class="nxtbar"><button class="btn-next" onclick="nextRound()">Proceed to Round ${S.round+1} →</button></div>`;
+      } else {
+        h+=`<div class="nxtbar"><button class="btn-next" onclick="S.phase='endscreen';render()">View final results →</button></div>`;
+      }
+      root.innerHTML=h; return;
+    }
+
+    h+=`<div class="global-panel ${tv}">
+      <div class="gp-lbl ${tv}">${tv==='st'?'GLOBAL SITUATION REPORT — THIS ROUND':'GLOBAL TRAJECTORY — LONG TERM (10+ YEARS)'}</div>`;
+    gData.forEach(row=>{
+      h+=`<div class="gp-row"><span class="gp-key">${row.k}</span><span class="gp-val ${row.d}">${row.v}</span></div>`;
+    });
+    h+=`</div><div class="outcgrid">`;
+    COUNTRIES.forEach(c=>{
+      const ch=S.choices[c.id];
+      const data=c.cons[ch];
+      const rows=tv==='st'?data.st:data.lt;
+      const polCls=ch==='conserve'?'pc':ch==='invest'?'pi':'pe';
+      const outCls=ch==='conserve'?'oc':ch==='invest'?'oi':'oe';
+      const polLabel=ch==='conserve'?'Conservation':ch==='invest'?'Renew. Investment':'Fossil Expansion';
+      h+=`<div class="outc ${outCls}">
+        <div class="outc-top">
+          <div class="outc-name">${c.flag} ${c.name}</div>
+          <div class="outc-pol ${polCls}">${polLabel}</div>
+        </div>`;
+      rows.forEach(row=>{
+        const rowBg=row.d==='pos'?'gain':row.d==='neg'?'loss':'neu-bg';
+        const arrow=row.d==='pos'?'↑':row.d==='neg'?'↓':'→';
+        h+=`<div class="delta-row ${rowBg}">
+          <span class="delta-lbl">${row.l}</span>
+          <div class="delta-right">
+            <span class="delta-val ${row.d}">${row.v}</span>
+            <span class="delta-arrow ${row.d}">${arrow}</span>
+          </div>
+        </div>`;
+      });
+      h+=`<div class="narrative">${data.note}</div>`;
+      if(tv==='lt'){
+        const suggestion=getSuggestedPolicy(c, ch, S.choices, S.budget, S.temperature, S.infra[c.id], S.round);
+        h+=`<div class="suggested-policy">
+          <div class="sp-label">SUGGESTED POLICY — ROUND ${S.round+1}</div>
+          <div class="sp-action">${suggestion.action}</div>
+          <div class="sp-reason">${suggestion.reason}</div>
+        </div>`;
+      }
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+    if(S.round<MAX_ROUNDS&&S.budget>0){
+      h+=`<div class="nxtbar"><button class="btn-next" onclick="nextRound()">Proceed to Round ${S.round+1} →</button></div>`;
+    } else {
+      h+=`<div class="nxtbar"><button class="btn-next" onclick="S.phase='endscreen';render()">View final results →</button></div>`;
+    }
+    root.innerHTML=h; return;
+  }
+
+  if(S.phase==='choose'){
+    h+=`<div class="pbanner">Round ${S.round} — select national energy policy for all 8 nations · submissions are simultaneous and binding</div>`;
+    h+=`<div class="grid">`;
+    COUNTRIES.forEach(c=>{
+      const ch=S.choices[c.id];
+      const ib=Math.floor(S.infra[c.id]/3);
+      const renew=Math.min(95,c.em.renew+S.infra[c.id]*3);
+      h+=`<div class="cp ${ch==='conserve'?'pc':ch==='invest'?'pi':ch==='expand'?'pe':''}">
+        <div class="cph"><div class="cpf">${c.flag}</div><div><div class="cpn">${c.name}</div><div class="cpt">${c.type}</div></div></div>
+        <div class="sl">Climate data (2025)</div>
+        ${c.stats.map(s=>`<div class="dr"><span class="dk">${s.l}</span><span class="dv ${s.c}">${s.v}</span></div>`).join('')}
+        <div class="sl">Economic profile</div>
+        <div class="cbadge"><span style="font-size:13px">${c.cIcon}</span><span class="cbadge-t">${c.currency}</span><span class="cbadge-s">${c.cDesc}</span></div>
+        <div class="pbars">
+          <div class="pbr"><span class="pbl">Economic power</span><div class="pbtrk"><div class="pbfil" style="width:${c.ep*10}%;background:${pc(c.ep)}"></div></div><span class="pbv">${c.epL}</span></div>
+          <div class="pbr"><span class="pbl">Resource power</span><div class="pbtrk"><div class="pbfil" style="width:${c.rp*10}%;background:${pc(c.rp)}"></div></div><span class="pbv">${c.rpL}</span></div>
+          <div class="pbr"><span class="pbl">Trade dependence</span><div class="pbtrk"><div class="pbfil" style="width:${c.td*10}%;background:${pc(c.td)}"></div></div><span class="pbv">${c.tdL}</span></div>
+        </div>
+        <div class="sl">Energy mix · Infra ${S.infra[c.id]}/10</div>
+        <div class="embar">
+          <div style="width:${c.em.coal}%;background:#712B13"></div>
+          <div style="width:${c.em.oil}%;background:#854F0B"></div>
+          <div style="width:${c.em.gas}%;background:#BA7517"></div>
+          <div style="width:${renew}%;background:#0F6E56"></div>
+        </div>
+        <div class="eml">
+          <span class="emi"><span class="emd" style="background:#712B13"></span>Coal ${c.em.coal}%</span>
+          <span class="emi"><span class="emd" style="background:#854F0B"></span>Oil ${c.em.oil}%</span>
+          <span class="emi"><span class="emd" style="background:#BA7517"></span>Gas ${c.em.gas}%</span>
+          <span class="emi"><span class="emd" style="background:#0F6E56"></span>Renew ${renew}%</span>
+        </div>
+        <div class="pledge">${c.pledge}</div>
+        <div class="sl">Submit national policy</div>
+        <div class="pbtns">
+          <button class="pbtn pbtn-c ${ch==='conserve'?'sel':''}" onclick="S.choices['${c.id}']='conserve';render()">
+            Conservation Policy
+            <div class="hint">−${c.cd} drain · +${c.cr} regen · net −${c.cd-c.cr}</div>
+          </button>
+          <button class="pbtn pbtn-i ${ch==='invest'?'sel':''}" onclick="S.choices['${c.id}']='invest';render()">
+            Renewable Investment
+            <div class="hint">−${Math.max(1,c.investD-ib)} drain · +${c.ir+ib} regen · builds infra</div>
+          </button>
+          <button class="pbtn pbtn-e ${ch==='expand'?'sel':''}" onclick="S.choices['${c.id}']='expand';render()">
+            Fossil Expansion
+            <div class="hint">−${c.fd} drain · no regen · degrades infra</div>
+          </button>
+        </div>
+      </div>`;
+    });
+    h+=`</div>`;
+    h+=`<div class="abar"><button class="btn-run" ${!allChosen?'disabled':''} onclick="runSimulation()">
+      ${allChosen?'Run AI Consequence Engine →':'Awaiting policy submissions ('+Object.keys(S.choices).length+'/8 submitted)'}
+    </button></div>`;
+  }
+
+  root.innerHTML=h;
+}
+render();
+</script>
+</body>
+</html>

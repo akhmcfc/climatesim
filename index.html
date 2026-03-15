@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClimateSim — AI Climate Negotiation Platform</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060b18;color:#ddd9d0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;font-size:13px;line-height:1.5}
+.topbar{background:#080e1e;border-bottom:1px solid #1a2640;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.logo{font-size:17px;font-weight:700;color:#7F77DD}.logo span{color:#5DCAA5}
+.tagline{font-size:11px;color:#444441;margin-top:2px}
+.top-right{display:flex;align-items:center;gap:8px}
+.rpill{font-size:11px;background:#0d1220;border:0.5px solid #2a3050;border-radius:20px;padding:4px 12px;color:#888780}
+.btn-refresh{padding:6px 14px;background:#0d1220;border:0.5px solid #534AB7;border-radius:6px;font-size:11px;color:#7F77DD;cursor:pointer;transition:all 0.15s;font-weight:500}
+.btn-refresh:hover{background:#26215C;color:#AFA9EC}
+.api-bar{padding:8px 24px;background:#0d0a06;border-bottom:0.5px solid #633806}
+.api-label{font-size:10px;color:#BA7517;margin-bottom:4px;font-weight:500}
+.api-input{width:100%;padding:6px 10px;background:#060b18;border:0.5px solid #2a3050;border-radius:5px;color:#ddd9d0;font-size:11px;font-family:monospace;outline:none}
+.api-input:focus{border-color:#534AB7}
+.mbar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#1a2035}
+.met{background:#070c1a;padding:11px 16px}
+.met-l{font-size:10px;color:#5F5E5A;margin-bottom:4px;font-weight:500}
+.met-v{font-size:20px;font-weight:600}
+.met-v.ok{color:#1D9E75}.met-v.warn{color:#BA7517}.met-v.crit{color:#E24B4A}.met-v.temp{color:#EF9F27}.met-v.nt{color:#888780}
+.met-s{font-size:10px;color:#444441;margin-top:2px}
+.bwrap{padding:10px 24px;background:#070c1a;border-bottom:0.5px solid #1a2035}
+.btop{display:flex;justify-content:space-between;font-size:11px;color:#5F5E5A;margin-bottom:5px}
+.trk{height:5px;background:#0a0f1a;border-radius:3px;overflow:hidden}
+.fill{height:100%;transition:width 0.8s ease}
+.fill.ok{background:#1D9E75}.fill.warn{background:#BA7517}.fill.crit{background:#E24B4A}
+.preview-note{font-size:10px;color:#1D9E75;margin-top:4px}
+.source-bar{padding:4px 24px;background:#070c1a;border-bottom:0.5px solid #1a2035;font-size:9px;color:#333330;text-align:right}
+.pbanner{margin:10px 24px;background:#0d0d1e;border:0.5px solid #3C3489;border-radius:6px;padding:8px 14px;font-size:11px;color:#7F77DD;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 24px 12px}
+.cp{background:#080e1e;border:0.5px solid #1a2640;border-radius:8px;padding:14px}
+.cp.pc{border-color:#0F6E56;background:#060f0b}
+.cp.pi{border-color:#185FA5;background:#060b14}
+.cp.pe{border-color:#712B13;background:#0e0806}
+.cph{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid #1a2035}
+.cpf{font-size:18px}.cpn{font-size:13px;font-weight:600}.cpt{font-size:10px;color:#5F5E5A;margin-top:1px}
+.sl{font-size:9px;color:#444441;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;margin:8px 0 4px}
+.dr{display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid #0d1220;font-size:11px}
+.dr:last-of-type{border:none}
+.dk{color:#5F5E5A}.dv{font-weight:600}
+.dv.hi{color:#993C1D}.dv.md{color:#BA7517}.dv.lo{color:#1D9E75}.dv.nt{color:#888780}
+.cbadge{display:flex;align-items:center;gap:5px;background:#0d1220;border:0.5px solid #2a3050;border-radius:4px;padding:4px 7px;margin:5px 0}
+.cbadge-t{font-size:10px;font-weight:600;color:#AFA9EC}.cbadge-s{font-size:9px;color:#444441;margin-left:auto}
+.pbars{margin:4px 0}
+.pbr{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.pbl{font-size:9px;color:#5F5E5A;width:75px;flex-shrink:0}
+.pbtrk{flex:1;height:4px;background:#0a0f1a;border-radius:2px;overflow:hidden}
+.pbfil{height:100%;border-radius:2px}
+.pbv{font-size:9px;color:#888780;min-width:55px;text-align:right}
+.embar{display:flex;height:5px;border-radius:2px;overflow:hidden;gap:1px;margin:5px 0 3px}
+.eml{display:flex;gap:5px;flex-wrap:wrap}
+.emi{display:flex;align-items:center;gap:2px;font-size:9px;color:#5F5E5A}
+.emd{width:5px;height:5px;border-radius:1px}
+.pledge{font-size:10px;color:#7F77DD;background:#0a0a1a;border-radius:3px;padding:4px 6px;margin:6px 0;line-height:1.4}
+.pbtns{display:grid;gap:4px;margin-top:8px}
+.pbtn{padding:6px 8px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;border:0.5px solid transparent;text-align:left;transition:all 0.15s}
+.pbtn:disabled{opacity:0.25;cursor:not-allowed}
+.pbtn .hint{font-size:8px;opacity:0.7;margin-top:1px}
+.pbtn-c{background:#060f0b;border-color:#085041;color:#5DCAA5}
+.pbtn-c:hover:not(:disabled){background:#0a1a10;border-color:#1D9E75}
+.pbtn-c.sel{background:#0F6E56;border-color:#1D9E75;color:#E1F5EE}
+.pbtn-i{background:#06090f;border-color:#0C447C;color:#85B7EB}
+.pbtn-i:hover:not(:disabled){background:#0a1020;border-color:#378ADD}
+.pbtn-i.sel{background:#185FA5;border-color:#378ADD;color:#E6F1FB}
+.pbtn-e{background:#0e0806;border-color:#4A1B0C;color:#F0997B}
+.pbtn-e:hover:not(:disabled){background:#180c06;border-color:#712B13}
+.pbtn-e.sel{background:#712B13;border-color:#993C1D;color:#FAECE7}
+.abar{padding:0 24px 12px}
+.btn-run{width:100%;padding:12px;background:#26215C;color:#AFA9EC;border:0.5px solid #534AB7;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.btn-run:hover:not(:disabled){background:#3C3489;color:#CECBF6}
+.btn-run:disabled{opacity:0.3;cursor:not-allowed}
+.term-pick{margin:0 24px 12px;background:#0d0d1e;border:0.5px solid #3C3489;border-radius:10px;padding:20px 24px}
+.tp-title{font-size:14px;color:#AFA9EC;font-weight:500;margin-bottom:4px;text-align:center}
+.tp-sub{font-size:11px;color:#444441;text-align:center;margin-bottom:16px}
+.tp-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.tp-btn{padding:14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;text-align:center}
+.tp-btn .tp-hint{font-size:10px;opacity:0.75;margin-top:3px;font-weight:400}
+.tp-btn.st{background:#26215C;color:#AFA9EC;border:0.5px solid #534AB7}
+.tp-btn.st:hover{background:#3C3489}
+.tp-btn.lt{background:#085041;color:#9FE1CB;border:0.5px solid #1D9E75}
+.tp-btn.lt:hover{background:#0F6E56}
+.tp-btn.sg{background:#26150a;color:#FAC775;border:0.5px solid #633806}
+.tp-btn.sg:hover{background:#3d2010}
+.chosen-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 24px 12px}
+.cs-card{background:#080e1e;border:0.5px solid #1a2640;border-radius:6px;padding:10px;text-align:center}
+.cs-flag{font-size:16px;margin-bottom:4px}.cs-name{font-size:10px;color:#888780;margin-bottom:5px}
+.cs-choice{font-size:10px;font-weight:600;padding:3px 8px;border-radius:12px;display:inline-block}
+.cs-choice.pe{background:#4A1B0C;color:#F0997B}
+.cs-choice.pi{background:#0C447C;color:#85B7EB}
+.cs-choice.pc{background:#085041;color:#5DCAA5}
+.term-toggle{display:flex;gap:8px;padding:0 24px 10px;align-items:center}
+.tt-lbl{font-size:11px;color:#5F5E5A;margin-right:4px}
+.tt-btn{padding:6px 16px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
+.tt-btn.st-on{background:#534AB7;color:#CECBF6}
+.tt-btn.lt-on{background:#0F6E56;color:#E1F5EE}
+.tt-btn.sg-on{background:#633806;color:#FAC775}
+.tt-btn.off{background:#0d1220;color:#5F5E5A;border:0.5px solid #1a2035}
+.global-panel{margin:0 24px 12px;border-radius:8px;padding:12px 16px}
+.global-panel.st{background:#0d0d1e;border:0.5px solid #534AB7}
+.global-panel.lt{background:#060f0b;border:0.5px solid #0F6E56}
+.gp-lbl{font-size:9px;font-weight:700;letter-spacing:0.08em;margin-bottom:8px}
+.gp-lbl.st{color:#7F77DD}.gp-lbl.lt{color:#1D9E75}
+.gp-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #1a2035;font-size:11px}
+.gp-row:last-of-type{border:none}
+.gp-key{color:#5F5E5A;min-width:100px}
+.gp-val{font-weight:500;text-align:right}
+.gp-val.pos{color:#1D9E75}.gp-val.neg{color:#E24B4A}.gp-val.neu{color:#888780}
+.outcgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 24px 12px}
+.outc{background:#080e1e;border-radius:8px;padding:14px;border:0.5px solid #1a2640}
+.outc.oc{border-color:#085041}.outc.oe{border-color:#4A1B0C}.outc.oi{border-color:#0C447C}
+.outc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:4px}
+.outc-name{font-size:12px;color:#888780;font-weight:500}
+.outc-pol{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600}
+.outc-pol.pc{background:#085041;color:#5DCAA5}.outc-pol.pe{background:#4A1B0C;color:#F0997B}.outc-pol.pi{background:#0C447C;color:#85B7EB}
+.delta-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:5px;margin-bottom:4px}
+.delta-row.gain{background:#0a1a10;border:0.5px solid #085041}
+.delta-row.loss{background:#150a08;border:0.5px solid #4A1B0C}
+.delta-row.neu-bg{background:#0d1220;border:0.5px solid #1a2035}
+.delta-lbl{font-size:10px;color:#888780}
+.delta-right{display:flex;align-items:center;gap:6px}
+.delta-val{font-size:13px;font-weight:700}
+.delta-val.pos{color:#1D9E75}.delta-val.neg{color:#E24B4A}.delta-val.neu{color:#888780}
+.delta-arrow{font-size:14px;font-weight:700}
+.delta-arrow.pos{color:#1D9E75}.delta-arrow.neg{color:#E24B4A}.delta-arrow.neu{color:#888780}
+.narrative{font-size:11px;color:#5F5E5A;line-height:1.6;margin-top:8px;padding-top:8px;border-top:0.5px solid #1a2035}
+.suggested-policy{background:#060f0b;border:0.5px solid #0F6E56;border-radius:5px;padding:8px 10px;margin-top:8px}
+.sp-label{font-size:9px;font-weight:700;letter-spacing:0.08em;color:#1D9E75;margin-bottom:5px}
+.sp-action{font-size:10px;font-weight:600;color:#5DCAA5;margin-bottom:3px}
+.sp-reason{font-size:10px;color:#5F5E5A;line-height:1.5}
+.sdg-panel{margin:0 24px 12px;background:#0d0a06;border:0.5px solid #633806;border-radius:8px;padding:12px 16px}
+.sdg-panel-lbl{font-size:9px;font-weight:700;letter-spacing:0.08em;color:#BA7517;margin-bottom:8px}
+.sdg-global-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid #1a1206;font-size:11px}
+.sdg-global-row:last-of-type{border:none}
+.sdg-gk{color:#5F5E5A;min-width:120px}
+.sdg-gv{font-weight:500;color:#EF9F27;text-align:right}
+.sdg-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 24px 12px}
+.sdg-card{background:#0d0a06;border:0.5px solid #633806;border-radius:8px;padding:14px}
+.sdg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sdg-name{font-size:12px;color:#888780;font-weight:500}
+.sdg-status{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600}
+.sdg-status.on-track{background:#085041;color:#5DCAA5}
+.sdg-status.at-risk{background:#633806;color:#FAC775}
+.sdg-status.off-track{background:#4A1B0C;color:#F0997B}
+.sdg-goal{background:#0a0806;border-radius:4px;padding:6px 8px;margin-bottom:5px}
+.sdg-goal-tag{font-size:8px;color:#BA7517;font-weight:700;letter-spacing:0.06em;margin-bottom:3px}
+.sdg-goal-text{font-size:10px;color:#888780;line-height:1.5}
+.sdg-action{background:#0d1206;border:0.5px solid #3B6D11;border-radius:4px;padding:6px 8px;margin-top:6px}
+.sdg-action-tag{font-size:8px;color:#639922;font-weight:700;letter-spacing:0.06em;margin-bottom:3px}
+.processing{text-align:center;padding:28px;border:0.5px dashed #1a2035;margin:0 24px 12px;border-radius:8px}
+.proc-title{font-size:14px;color:#7F77DD;margin-bottom:6px;font-weight:500}
+.proc-sub{font-size:11px;color:#444441;line-height:2}
+.blink{animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:0.3}50%{opacity:1}}
+.nxtbar{padding:0 24px 18px}
+.btn-next{width:100%;padding:11px;background:#080e1e;color:#ddd9d0;border:0.5px solid #1a2640;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500}
+.btn-next:hover{background:#0d1525}
+.endscr{text-align:center;padding:48px 24px}
+.end-t{font-size:22px;font-weight:700;margin-bottom:8px}
+.end-t.bad{color:#E24B4A}.end-t.good{color:#1D9E75}
+.end-s{font-size:12px;color:#5F5E5A;line-height:1.9;margin-bottom:22px}
+.end-g{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;text-align:left}
+.end-vc{background:#080e1e;border:0.5px solid #1a2640;border-radius:7px;padding:12px}
+.end-cn{font-size:11px;color:#888780;margin-bottom:4px;font-weight:500}
+.end-sc{font-size:22px;font-weight:700;margin-bottom:3px}
+.end-sc.g{color:#1D9E75}.end-sc.m{color:#BA7517}.end-sc.b{color:#E24B4A}
+.end-vl{font-size:10px;color:#5F5E5A;line-height:1.5}
+.btn-rst{padding:10px 24px;background:#26215C;color:#AFA9EC;border:0.5px solid #534AB7;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ── State ──────────────────────────────────────────────────────
+const MAX_BUDGET=100, MAX_ROUNDS=5, BASE_TEMP=1.2;
+let COUNTRIES=[];
+let S={
+  budget:MAX_BUDGET, round:1, choices:{}, phase:'loading',
+  termView:null, scores:{}, infra:{}, temperature:BASE_TEMP,
+  history:[], apiKey:'', aiResults:null
+};
+
+// ── Load country data ──────────────────────────────────────────
+async function loadCountries(){
+  try{
+    const res=await fetch('./countries.json');
+    COUNTRIES=await res.json();
+    COUNTRIES.forEach(c=>{S.scores[c.id]=0; S.infra[c.id]=0;});
+    S.phase='choose';
+  }catch(e){
+    document.getElementById('root').innerHTML='<div style="padding:40px;color:#E24B4A;text-align:center">Failed to load countries.json. Ensure you are running via a local server (not file://).<br><br>Run: <code>python -m http.server 8080</code></div>';
+    return;
+  }
+  render();
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function bc(b){return b/MAX_BUDGET>0.5?'ok':b/MAX_BUDGET>0.25?'warn':'crit'}
+function pc(v){return v>=8?'#E24B4A':v>=5?'#BA7517':'#1D9E75'}
+
+function calcDelta(){
+  let drain=0,regen=0;
+  COUNTRIES.forEach(c=>{
+    const ch=S.choices[c.id];
+    const ib=Math.floor(S.infra[c.id]/3);
+    if(ch==='expand') drain+=c.fd;
+    else if(ch==='invest'){drain+=Math.max(1,c.investD-ib); regen+=c.ir+ib;}
+    else{drain+=Math.max(1,c.cd); regen+=c.cr;}
+  });
+  return{drain,regen,net:regen-drain};
+}
+
+function getSuggestedPolicy(country,currentChoice,allChoices,budget,temperature,infraScore,round){
+  const expanders=COUNTRIES.filter(c=>allChoices[c.id]==='expand'&&c.id!==country.id);
+  const investors=COUNTRIES.filter(c=>allChoices[c.id]==='invest'&&c.id!==country.id);
+  const budgetPct=budget/100;
+  const nearLimit=temperature>=1.35;
+  const highVuln=country.vuln>=0.6;
+  const petroState=country.fd>=7&&country.rp>=8;
+  const g7=country.ep>=9;
+  const infraBonus=infraScore>=3;
+  if(petroState){
+    if(expanders.length<=2&&investors.length>=3)return{action:'Consider renewable investment',reason:`${investors.length} nations investing signals a green energy bloc forming. Continued fossil expansion risks geopolitical isolation. Partial diversification now preserves leverage.`};
+    return{action:'Fossil expansion — rational but narrowing window',reason:`With ${expanders.length} other nations expanding, collective pressure remains low. But peak fossil demand is approaching — the window to extract maximum value is narrowing each round.`};
+  }
+  if(budgetPct<0.25)return{action:'Conservation — urgent',reason:`Carbon budget at ${Math.round(budgetPct*100)}% — collapse imminent. Even one more round of majority fossil expansion exhausts the commons. Conservation buys critical time.`};
+  if(highVuln&&expanders.length>=3)return{action:'Renewable investment + invoke loss and damage',reason:`${expanders.length} nations expanded fossils this round. With vulnerability ${country.vuln}, ${country.name} will absorb disproportionate climate damage from others' choices. Investment builds resilience while loss and damage creates legal pressure on high emitters.`};
+  if(g7&&currentChoice==='expand')return{action:'Switch to renewable investment',reason:`As a major economy with high economic power, continued fossil expansion invites EU CBAM tariffs and undermines multilateral climate architecture. Long-term diplomatic cost exceeds short-term energy revenue.`};
+  if(infraBonus)return{action:'Renewable investment — compounding returns',reason:`Infrastructure index at ${infraScore}/10. Investment now costs less and regenerates more. This is the optimal compounding window before budget pressure forces conservation.`};
+  if(nearLimit&&currentChoice!=='invest')return{action:'Renewable investment — temperature critical',reason:`Global temperature at ${temperature.toFixed(3)}°C — within 0.15°C of the 1.5°C Paris limit. Renewable investment is the only policy that regenerates the carbon budget. Conservation merely slows depletion.`};
+  if(currentChoice==='invest'&&investors.length>=3)return{action:'Maintain renewable investment',reason:`${investors.length} nations investing simultaneously creates compounding global effect. Maintaining this coalition is more valuable than any individual policy switch.`};
+  if(currentChoice==='conserve'&&expanders.length>=4)return{action:'Escalate to renewable investment',reason:`Conservation reduces your drain but cannot offset ${expanders.length} nations expanding fossils. Only investment regenerates the budget — conservation alone cannot stabilise the commons under this level of defection.`};
+  return{action:'Renewable investment',reason:`Given ${Math.round(budgetPct*100)}% budget remaining and ${temperature.toFixed(3)}°C temperature, investment offers the best balance of economic stability and climate impact. Infrastructure built now compounds over ${5-round} remaining rounds.`};
+}
+
+// ── AI Simulation ───────────────────────────────────────────────
+async function runSimulation(){
+  if(!S.apiKey){alert('Please enter your Claude API key above to run the AI consequence engine.');return;}
+  S.phase='processing'; render();
+
+  const delta=calcDelta();
+  S.budget=Math.min(MAX_BUDGET,Math.max(0,S.budget+delta.net));
+  const td=COUNTRIES.reduce((s,c)=>s+(S.choices[c.id]==='expand'?0.06:S.choices[c.id]==='invest'?0.02:0.005),0);
+  S.temperature=Math.round((S.temperature+td)*1000)/1000;
+  COUNTRIES.forEach(c=>{
+    if(S.choices[c.id]==='invest') S.infra[c.id]=Math.min(10,S.infra[c.id]+1);
+    if(S.choices[c.id]==='expand') S.infra[c.id]=Math.max(0,S.infra[c.id]-1);
+    S.scores[c.id]+=(S.choices[c.id]==='invest'?2:S.choices[c.id]==='conserve'?1:-2);
+  });
+
+  const hist=S.history.length?'Previous rounds: '+S.history.map(h=>`Round ${h.r}: ${h.s}`).join('; ')+'.':`Opening round of negotiations.`;
+  const countryContext=COUNTRIES.map(c=>`
+${c.name}: GDP ${c.stats[0].v}, CO₂ ${c.stats[1].v}, fossil dependency ${c.stats[2].v}, vulnerability ${c.vuln} (${c.stats[3].v.split('—')[1].trim()}), ${c.stats[4].v} cumulative emitter
+Currency: ${c.currency} — ${c.cDesc}
+Economic power: ${c.ep}/10 (${c.epL}), Resource power: ${c.rp}/10 (${c.rpL}), Trade dependence: ${c.td}/10 (${c.tdL})
+Paris pledge: ${c.pledge}
+Infrastructure index this round: ${S.infra[c.id]}/10
+Policy chosen: ${S.choices[c.id]==='conserve'?'Conservation Policy':S.choices[c.id]==='invest'?'Renewable Energy Investment':'Fossil Fuel Expansion'}`).join('\n');
+
+  const prompt=`You are the AI consequence engine of a geopolitical climate policy simulation platform used by UN policy advisors and government analysts.
+
+SIMULATION STATE:
+Round ${S.round} of ${MAX_ROUNDS}
+Carbon budget: ${S.budget}/${MAX_BUDGET} units (${Math.round(S.budget/MAX_BUDGET*100)}% remaining)
+Global temperature: ${S.temperature.toFixed(3)}°C (Paris target: 1.5°C)
+${hist}
+
+COUNTRY DATA AND POLICY DECISIONS:
+${countryContext}
+
+DATA SOURCES: IMF WEO Oct 2025, EDGAR 2025, IEA 2024, ND-GAIN Country Index 2023, IPCC AR6, Our World in Data
+
+CONSEQUENCE RULES:
+1. Consequences must be asymmetric — same policy, different country = different outcome based on their real economic profile
+2. Nigeria (vuln 0.81, #32 emitter) faces disproportionate climate shocks vs USA (vuln 0.312, #1 emitter) for identical choices
+3. Paris NDC violations trigger specific diplomatic and reputational consequences
+4. Russia and Saudi Arabia fossil expansion has a genuinely rational economic case — acknowledge this explicitly
+5. India's financing trap (5-8% interest vs USA near-zero) must be reflected when discussing investment
+6. Severity escalates as budget depletes and temperature approaches 1.5°C
+7. Historical round context must compound — reference what happened in previous rounds
+8. Write as formal UN geopolitical policy briefings, not game descriptions
+9. Renewable investment short-term impact reflects construction cost — mild GDP dip, capital redirected
+
+Respond ONLY in valid JSON, no markdown fences:
+{
+  "globalBriefing": "One formal sentence — collective geopolitical and climate consequence this round.",
+  "globalShortTerm": {"gdp": "...", "climate": "...", "geopolitical": "..."},
+  "globalLongTerm": {"gdp": "...", "climate": "...", "geopolitical": "..."},
+  "outcomes": [
+    {
+      "countryId": "usa",
+      "shortTerm": [
+        {"l": "GDP impact", "v": "...", "d": "pos|neg|neu"},
+        {"l": "Temp contribution", "v": "...", "d": "neg"},
+        {"l": "Political standing", "v": "...", "d": "pos|neg|neu"}
+      ],
+      "longTerm": [
+        {"l": "GDP trajectory", "v": "...", "d": "pos|neg|neu"},
+        {"l": "Key risk", "v": "...", "d": "pos|neg|neu"},
+        {"l": "Geopolitical", "v": "...", "d": "pos|neg|neu"}
+      ],
+      "note": "2-3 sentence formal policy briefing grounded in real data.",
+      "cooperationScore": 0
+    }
+  ]
+}
+Generate one outcome object per country in this order: usa, china, eu, india, russia, brazil, saudi, nigeria.
+cooperationScore: integer -2 to +2 reflecting how cooperative the decision was for global climate stability.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':S.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})
+    });
+    const d=await res.json();
+    if(d.error) throw new Error(d.error.message);
+    const parsed=JSON.parse(d.content[0].text);
+    S.history.push({r:S.round,s:COUNTRIES.map(c=>`${c.name.split(' ')[0]} ${S.choices[c.id]}`).join(', ')});
+    S.aiResults=parsed;
+    S.phase='term-pick';
+  }catch(e){
+    S.phase='choose';
+    alert('AI engine error: '+e.message+'\n\nCheck your API key and ensure you are running over HTTP, not file://');
+  }
+  render();
+}
+
+function showTerm(t){S.termView=t; S.phase='results'; render();}
+function nextRound(){
+  S.round++; S.choices={}; S.phase='choose'; S.termView=null; S.aiResults=null;
+  if(S.budget<=0||S.round>MAX_ROUNDS) S.phase='endscreen';
+  render();
+}
+function restart(){
+  const key=S.apiKey;
+  S={budget:MAX_BUDGET,round:1,choices:{},phase:'choose',termView:null,
+     scores:{},infra:{},temperature:BASE_TEMP,history:[],apiKey:key,aiResults:null};
+  COUNTRIES.forEach(c=>{S.scores[c.id]=0; S.infra[c.id]=0;});
+  render();
+}
+function getVerdict(s){return s>=5?{l:'Cooperative Actor',c:'g'}:s>=0?{l:'Neutral Actor',c:'m'}:{l:'Defecting Actor',c:'b'}}
+
+// ── Render ─────────────────────────────────────────────────────
+function render(){
+  const root=document.getElementById('root'); if(!root) return;
+  if(S.phase==='loading'){root.innerHTML='<div style="padding:40px;color:#7F77DD;text-align:center">Loading country data...</div>'; return;}
+
+  const bpct=Math.round(S.budget/MAX_BUDGET*100);
+  const allChosen=COUNTRIES.every(c=>S.choices[c.id]);
+  const previewDelta=allChosen?calcDelta():null;
+  const refreshBtn=`<button class="btn-refresh" onclick="restart()">&#8635; New simulation</button>`;
+
+  if(S.phase==='endscreen'){
+    const collapsed=S.budget<=0||S.temperature>=1.5;
+    let h=`<div class="topbar"><div><div class="logo">Climate<span>Sim</span></div><div class="tagline">AI Climate Negotiation Platform · 8 Nations · 2025 Data</div></div><div class="top-right">${refreshBtn}</div></div>
+    <div class="endscr"><div class="end-t ${collapsed?'bad':'good'}">${collapsed?'Climate Threshold Breached':'Simulation Complete'}</div>
+    <div class="end-s">Final temperature: ${S.temperature.toFixed(3)}°C · Carbon budget: ${S.budget}/${MAX_BUDGET} · ${S.round-1} rounds completed<br>${collapsed?'Collective action failure — economic self-interest prevailed over planetary stability.':'Review cooperation records below.'}</div>
+    <div class="end-g">`;
+    COUNTRIES.forEach(c=>{const v=getVerdict(S.scores[c.id]);h+=`<div class="end-vc"><div class="end-cn">${c.flag} ${c.name}</div><div class="end-sc ${v.c}">${S.scores[c.id]>0?'+':''}${S.scores[c.id]}</div><div class="end-vl">${v.l}<br>Infra: ${S.infra[c.id]}/10<br>${c.currency}</div></div>`;});
+    h+=`</div><button class="btn-rst" onclick="restart()">Initiate new simulation</button></div>`;
+    root.innerHTML=h; return;
+  }
+
+  let h=`<div class="topbar"><div><div class="logo">Climate<span>Sim</span></div><div class="tagline">AI Climate Negotiation Platform · Geopolitical Policy Simulation</div></div><div class="top-right"><div class="rpill">Round ${S.round}/${MAX_ROUNDS}</div>${refreshBtn}</div></div>`;
+
+  if(!S.apiKey){
+    h+=`<div class="api-bar"><div class="api-label">Enter Claude API key to activate AI consequence engine (get one free at console.anthropic.com)</div>
+    <input class="api-input" type="password" placeholder="sk-ant-..." oninput="S.apiKey=this.value.trim()" value="${S.apiKey}"></div>`;
+  }
+
+  h+=`<div class="mbar">
+    <div class="met"><div class="met-l">Global temperature</div><div class="met-v temp">${S.temperature.toFixed(3)}°C</div><div class="met-s">Paris limit: 1.5°C</div></div>
+    <div class="met"><div class="met-l">Carbon budget</div><div class="met-v ${bc(S.budget)}">${S.budget}/${MAX_BUDGET}</div><div class="met-s">${bpct}% remaining</div></div>
+    <div class="met"><div class="met-l">Global infra index</div><div class="met-v nt">${Object.values(S.infra).reduce((a,b)=>a+b,0)}/80</div><div class="met-s">Renewable capacity built</div></div>
+    <div class="met"><div class="met-l">Nations submitted</div><div class="met-v nt">${Object.keys(S.choices).length}/8</div><div class="met-s">This round</div></div>
+  </div>
+  <div class="bwrap">
+    <div class="btop"><span>Global carbon budget</span><span>Sources: IPCC AR6 · IMF WEO Oct 2025 · EDGAR 2025 · IEA 2024 · ND-GAIN 2023</span></div>
+    <div class="trk"><div class="fill ${bc(S.budget)}" style="width:${bpct}%"></div></div>
+    ${previewDelta?`<div class="preview-note">Projected this round: −${previewDelta.drain} drain · +${previewDelta.regen} regen · net ${previewDelta.net>=0?'+':''}${previewDelta.net}</div>`:'<div class="preview-note">Renewable investment regenerates the budget · Infrastructure compounds over rounds</div>'}
+  </div>
+  <div class="source-bar">GDP: IMF WEO Oct 2025 · CO₂/capita: EDGAR 2025 · Vulnerability: ND-GAIN 2023 · Energy mix: IEA 2024 · Emissions rank: Our World in Data / Global Carbon Project</div>`;
+
+  if(S.phase==='term-pick'&&S.aiResults){
+    h+=`<div class="chosen-grid">`;
+    COUNTRIES.forEach(c=>{
+      const ch=S.choices[c.id];
+      h+=`<div class="cs-card"><div class="cs-flag">${c.flag}</div><div class="cs-name">${c.name}</div><div class="cs-choice ${ch==='conserve'?'pc':ch==='invest'?'pi':'pe'}">${ch==='conserve'?'Conservation':ch==='invest'?'Renew. Investment':'Fossil Expansion'}</div></div>`;
+    });
+    h+=`</div><div class="term-pick">
+      <div class="tp-title">All 8 nations have submitted — choose which consequences to reveal</div>
+      <div class="tp-sub">Temperature +${td()} this round · Budget net ${previewDelta&&previewDelta.net>=0?'+':''}${previewDelta?previewDelta.net:0}</div>
+      <div class="tp-btns">
+        <button class="tp-btn st" onclick="showTerm('st')">Short term effects<div class="tp-hint">Immediate GDP · Climate · Political fallout</div></button>
+        <button class="tp-btn lt" onclick="showTerm('lt')">Long term effects<div class="tp-hint">10-year trajectory · Warming path · Suggested policy</div></button>
+        <button class="tp-btn sg" onclick="showTerm('sg')">SDG pathways<div class="tp-hint">UN goals gap analysis · Policy recommendations</div></button>
+      </div>
+    </div>`;
+    root.innerHTML=h; return;
+  }
+
+  if(S.phase==='processing'){
+    h+=`<div class="processing"><div class="proc-title">AI engine processing <span class="blink">&#9608;</span></div>
+    <div class="proc-sub">Applying real economic profiles · Checking Paris NDC compliance<br>Modelling asymmetric climate impacts · Generating geopolitical policy briefings</div></div>`;
+    root.innerHTML=h; return;
+  }
+
+  if(S.phase==='results'&&S.aiResults){
+    const tv=S.termView;
+    const expandCount=COUNTRIES.filter(c=>S.choices[c.id]==='expand').length;
+    const investCount=COUNTRIES.filter(c=>S.choices[c.id]==='invest').length;
+
+    h+=`<div class="term-toggle"><span class="tt-lbl">Viewing:</span>
+      <button class="tt-btn ${tv==='st'?'st-on':'off'}" onclick="showTerm('st')">Short term</button>
+      <button class="tt-btn ${tv==='lt'?'lt-on':'off'}" onclick="showTerm('lt')">Long term</button>
+      <button class="tt-btn ${tv==='sg'?'sg-on':'off'}" onclick="showTerm('sg')">SDG pathways</button>
+    </div>`;
+
+    if(tv==='sg'){
+      h+=`<div class="sdg-panel"><div class="sdg-panel-lbl">GLOBAL SDG STATUS — ROUND ${S.round} · UN SUSTAINABLE DEVELOPMENT GOALS 2030 FRAMEWORK</div>
+        <div class="sdg-global-row"><span class="sdg-gk">Nations on track</span><span class="sdg-gv">${COUNTRIES.filter(c=>c.sdgStatus==='on-track').map(c=>c.flag).join(' ')||'None'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">Nations at risk</span><span class="sdg-gv">${COUNTRIES.filter(c=>c.sdgStatus==='at-risk').map(c=>c.flag).join(' ')||'None'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">Nations off track</span><span class="sdg-gv">${COUNTRIES.filter(c=>c.sdgStatus==='off-track').map(c=>c.flag).join(' ')||'None'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">SDG 13 threat level</span><span class="sdg-gv">${expandCount>4?'Critical — majority defecting':expandCount>2?'Elevated — cooperation fragile':'Manageable — cooperation holding'}</span></div>
+        <div class="sdg-global-row"><span class="sdg-gk">Paris alignment</span><span class="sdg-gv">${S.temperature.toFixed(3)}°C · ${S.temperature>=1.4?'Red alert — 1.5°C imminent':S.temperature>=1.3?'Warning — above 1.5°C path':'On track'}</span></div>
+      </div><div class="sdg-grid">`;
+      COUNTRIES.forEach(c=>{
+        const ch=S.choices[c.id];
+        h+=`<div class="sdg-card"><div class="sdg-top"><div class="sdg-name">${c.flag} ${c.name}</div><div class="sdg-status ${c.sdgStatus}">${c.sdgStatusLabel}</div></div>
+          <div style="font-size:9px;margin-bottom:8px;color:#5F5E5A">Chose: <span style="font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;background:${ch==='expand'?'#4A1B0C':ch==='invest'?'#0C447C':'#085041'};color:${ch==='expand'?'#F0997B':ch==='invest'?'#85B7EB':'#5DCAA5'}">${ch==='conserve'?'Conservation':ch==='invest'?'Renew. Investment':'Fossil Expansion'}</span></div>`;
+        c.sdgGaps.forEach(g=>{h+=`<div class="sdg-goal"><div class="sdg-goal-tag">${g.goal}</div><div class="sdg-goal-text">${g.text}</div></div>`;});
+        h+=`<div class="sdg-action"><div class="sdg-action-tag">RECOMMENDED PATHWAY</div>`;
+        c.sdgActions.forEach(a=>{h+=`<div class="sdg-goal-text" style="margin-bottom:4px"><span style="color:#639922;font-weight:600">${a.label}:</span> ${a.text}</div>`;});
+        h+=`</div></div>`;
+      });
+      h+=`</div>`;
+    } else {
+      const gst=S.aiResults.globalShortTerm;
+      const glt=S.aiResults.globalLongTerm;
+      const gdata=tv==='st'?[
+        {k:'Global GDP',v:gst.gdp,d:gst.gdp.includes('-')?'neg':'pos'},
+        {k:'Climate',v:gst.climate,d:'neg'},
+        {k:'Geopolitical',v:gst.geopolitical,d:expandCount>4?'neg':'neu'}
+      ]:[
+        {k:'GDP trajectory',v:glt.gdp,d:glt.gdp.includes('-')?'neg':'pos'},
+        {k:'Climate projection',v:glt.climate,d:'neg'},
+        {k:'Geopolitical',v:glt.geopolitical,d:expandCount>4?'neg':'pos'}
+      ];
+      h+=`<div class="global-panel ${tv}"><div class="gp-lbl ${tv}">${tv==='st'?'GLOBAL SITUATION REPORT — THIS ROUND':'GLOBAL TRAJECTORY — LONG TERM (10+ YEARS)'}</div>`;
+      gdata.forEach(row=>{h+=`<div class="gp-row"><span class="gp-key">${row.k}</span><span class="gp-val ${row.d}">${row.v}</span></div>`;});
+      h+=`</div><div class="outcgrid">`;
+      COUNTRIES.forEach(c=>{
+        const ch=S.choices[c.id];
+        const outcome=S.aiResults.outcomes.find(o=>o.countryId===c.id)||{shortTerm:[],longTerm:[],note:'',cooperationScore:0};
+        const rows=tv==='st'?outcome.shortTerm:outcome.longTerm;
+        const polCls=ch==='conserve'?'pc':ch==='invest'?'pi':'pe';
+        const outCls=ch==='conserve'?'oc':ch==='invest'?'oi':'oe';
+        const polLabel=ch==='conserve'?'Conservation':ch==='invest'?'Renew. Investment':'Fossil Expansion';
+        h+=`<div class="outc ${outCls}"><div class="outc-top"><div class="outc-name">${c.flag} ${c.name}</div><div class="outc-pol ${polCls}">${polLabel}</div></div>`;
+        (rows||[]).forEach(row=>{
+          const rowBg=row.d==='pos'?'gain':row.d==='neg'?'loss':'neu-bg';
+          const arrow=row.d==='pos'?'&#8593;':row.d==='neg'?'&#8595;':'&#8594;';
+          h+=`<div class="delta-row ${rowBg}"><span class="delta-lbl">${row.l}</span><div class="delta-right"><span class="delta-val ${row.d}">${row.v}</span><span class="delta-arrow ${row.d}">${arrow}</span></div></div>`;
+        });
+        h+=`<div class="narrative">${outcome.note}</div>`;
+        if(tv==='lt'){
+          const sug=getSuggestedPolicy(c,ch,S.choices,S.budget,S.temperature,S.infra[c.id],S.round);
+          h+=`<div class="suggested-policy"><div class="sp-label">SUGGESTED POLICY — ROUND ${S.round+1}</div><div class="sp-action">${sug.action}</div><div class="sp-reason">${sug.reason}</div></div>`;
+        }
+        h+=`</div>`;
+      });
+      h+=`</div>`;
+    }
+
+    if(S.round<MAX_ROUNDS&&S.budget>0){
+      h+=`<div class="nxtbar"><button class="btn-next" onclick="nextRound()">Proceed to Round ${S.round+1} &rarr;</button></div>`;
+    } else {
+      h+=`<div class="nxtbar"><button class="btn-next" onclick="S.phase='endscreen';render()">View final results &rarr;</button></div>`;
+    }
+    root.innerHTML=h; return;
+  }
+
+  if(S.phase==='choose'){
+    h+=`<div class="pbanner">Round ${S.round} — select national energy policy for all 8 nations · submissions are simultaneous and binding</div>
+    <div class="grid">`;
+    COUNTRIES.forEach(c=>{
+      const ch=S.choices[c.id];
+      const ib=Math.floor(S.infra[c.id]/3);
+      const renew=Math.min(95,c.em.renew+S.infra[c.id]*3);
+      h+=`<div class="cp ${ch==='conserve'?'pc':ch==='invest'?'pi':ch==='expand'?'pe':''}">
+        <div class="cph"><div class="cpf">${c.flag}</div><div><div class="cpn">${c.name}</div><div class="cpt">${c.type}</div></div></div>
+        <div class="sl">Climate data (2025)</div>
+        ${c.stats.map(s=>`<div class="dr"><span class="dk">${s.l}</span><span class="dv ${s.c}">${s.v}</span></div>`).join('')}
+        <div class="sl">Economic profile</div>
+        <div class="cbadge"><span style="font-size:13px">${c.cIcon}</span><span class="cbadge-t">${c.currency}</span><span class="cbadge-s">${c.cDesc}</span></div>
+        <div class="pbars">
+          <div class="pbr"><span class="pbl">Economic power</span><div class="pbtrk"><div class="pbfil" style="width:${c.ep*10}%;background:${pc(c.ep)}"></div></div><span class="pbv">${c.epL}</span></div>
+          <div class="pbr"><span class="pbl">Resource power</span><div class="pbtrk"><div class="pbfil" style="width:${c.rp*10}%;background:${pc(c.rp)}"></div></div><span class="pbv">${c.rpL}</span></div>
+          <div class="pbr"><span class="pbl">Trade dependence</span><div class="pbtrk"><div class="pbfil" style="width:${c.td*10}%;background:${pc(c.td)}"></div></div><span class="pbv">${c.tdL}</span></div>
+        </div>
+        <div class="sl">Energy mix · Infra ${S.infra[c.id]}/10</div>
+        <div class="embar">
+          <div style="width:${c.em.coal}%;background:#712B13"></div>
+          <div style="width:${c.em.oil}%;background:#854F0B"></div>
+          <div style="width:${c.em.gas}%;background:#BA7517"></div>
+          <div style="width:${renew}%;background:#0F6E56"></div>
+        </div>
+        <div class="eml">
+          <span class="emi"><span class="emd" style="background:#712B13"></span>Coal ${c.em.coal}%</span>
+          <span class="emi"><span class="emd" style="background:#854F0B"></span>Oil ${c.em.oil}%</span>
+          <span class="emi"><span class="emd" style="background:#BA7517"></span>Gas ${c.em.gas}%</span>
+          <span class="emi"><span class="emd" style="background:#0F6E56"></span>Renew ${renew}%</span>
+        </div>
+        <div class="pledge">${c.pledge}</div>
+        <div class="sl">Submit national policy</div>
+        <div class="pbtns">
+          <button class="pbtn pbtn-c ${ch==='conserve'?'sel':''}" onclick="S.choices['${c.id}']='conserve';render()">Conservation Policy<div class="hint">&#8722;${c.cd} drain · +${c.cr} regen · net &#8722;${c.cd-c.cr}</div></button>
+          <button class="pbtn pbtn-i ${ch==='invest'?'sel':''}" onclick="S.choices['${c.id}']='invest';render()">Renewable Investment<div class="hint">&#8722;${Math.max(1,c.investD-ib)} drain · +${c.ir+ib} regen · builds infra</div></button>
+          <button class="pbtn pbtn-e ${ch==='expand'?'sel':''}" onclick="S.choices['${c.id}']='expand';render()">Fossil Expansion<div class="hint">&#8722;${c.fd} drain · no regen · degrades infra</div></button>
+        </div>
+      </div>`;
+    });
+    h+=`</div><div class="abar"><button class="btn-run" ${(!allChosen||!S.apiKey)?'disabled':''} onclick="runSimulation()">
+      ${!S.apiKey?'Add API key above to activate AI engine':!allChosen?`Awaiting policy submissions (${Object.keys(S.choices).length}/8 submitted)`:'Run AI Consequence Engine &rarr;'}
+    </button></div>`;
+  }
+
+  root.innerHTML=h;
+}
+
+function td(){
+  return (COUNTRIES.reduce((s,c)=>s+(S.choices[c.id]==='expand'?0.06:S.choices[c.id]==='invest'?0.02:0.005),0)).toFixed(3)+'°C';
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+loadCountries();
+</script>
+</body>
+</html>
